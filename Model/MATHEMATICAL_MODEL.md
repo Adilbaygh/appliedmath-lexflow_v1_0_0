@@ -117,11 +117,11 @@ $$
 Then
 
 $$
-\lambda^*=\min\left\{
+\lambda^*=\min\left{
 1,
 \min_{k:L_k^s>0}\frac{Q_k}{L_k^s},
 \min_{k,e:L_{ke}^e>0}\frac{C_{ke}}{L_{ke}^e}
-\right\}
+\right}
 $$.
 
 ## 7. Stage 2: weighted seasonal satisfaction
