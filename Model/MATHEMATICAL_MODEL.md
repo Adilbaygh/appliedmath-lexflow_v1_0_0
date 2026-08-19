@@ -117,79 +117,55 @@ $$
 Then
 
 $$
-{{\lambda }^{*}}=\min \left\{ 1,{{\min }_{k:L_{k}^{s}>0}}\frac{{{Q}_{k}}}{L_{k}^{s}},{{\min }_{k,e:L_{ke}^{e}>0}}\frac{{{C}_{ke}}}{L_{ke}^{e}}\text{ } \right\}
-$$.
+\lambda^*=\min\left\{ 1,\ \min_{k:L_k^s>0}\frac{Q_k}{L_k^s},\ \min_{k,e:L_{ke}^e>0}\frac{C_{ke}}{L_{ke}^e} \right\}.
+$$
 
 ## 7. Stage 2: weighted seasonal satisfaction
 
-
+$$
+D^w=\sum_{(k,f)\in\mathcal I}w_fd_{kf},
 $$
 
-D^w=\sum*{(k,f)\in\mathcal I}w_fd*{kf},
-
 $$
-
-
-$$
-
-S(r)=\frac{\sum*{(k,f)\in\mathcal I}w_fd*{kf}r\_{kf}}{D^w}.
-
+S(r)=\frac{\sum_{(k,f)\in\mathcal I}w_fd_{kf}r_{kf}}{D^w}.
 $$
 
 Stage 2 solves
 
-
 $$
-
 \max_r\ S(r)
-
 $$
 
 subject to the physical constraints and the exact theoretical floor
 
-
 $$
-
-r\_{kf}\ge\lambda^\*.
-
+r_{kf}\ge\lambda^*.
 $$
 
 ## 8. Stage 3: exact lexicographic temporal selector
 
 For consecutive active records,
 
-
 $$
-
-\Omega(r)=\sum*{(k,f)\in\mathcal J}|r*{kf}-r\_{k-1,f}|.
-
+\Omega(r)=\sum_{(k,f)\in\mathcal J}|r_{kf}-r_{k-1,f}|.
 $$
 
 Stage 3 solves
 
-
 $$
-
 \min_r\ \Omega(r)
-
 $$
 
 subject to the physical constraints,
 
-
 $$
-
-r\_{kf}\ge\lambda^\*,
-
+r_{kf}\ge\lambda^*,
 $$
 
 and exact preservation of the Stage-2 optimum,
 
-
 $$
-
-S(r)=\theta^\*.
-
+S(r)=\theta^*.
 $$
 
 In floating-point implementation, the equality is enforced within a declared numerical tolerance; the tolerance is not a model parameter.
@@ -204,4 +180,3 @@ In floating-point implementation, the equality is enforced within a declared num
 6. As a function of normalized capacities, $\lambda^*$ is continuous, concave, and piecewise linear.
 7. With positive $w_f$, every Stage-2 optimum is Pareto efficient in seasonal delivered volumes.
 8. Stage 3 preserves Stage-1 and Stage-2 optimality while weakly reducing $\Omega$.
-$$
