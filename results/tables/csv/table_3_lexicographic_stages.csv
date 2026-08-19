@@ -1,0 +1,19 @@
+benchmark,stage,minimum_service_ratio,weighted_satisfaction,temporal_variation,solver_status
+branching_shared_edge_bottleneck,Stage 1,0.7806122448979592,0.7806122448979592,0.0,0
+branching_shared_edge_bottleneck,Stage 2,0.7806122448979591,0.823922902494331,0.0,0
+branching_shared_edge_bottleneck,Stage 3,0.7806122448979592,0.823922902494331,0.0,0
+chain_source_bottleneck,Stage 1,0.72,0.72,0.0,0
+chain_source_bottleneck,Stage 2,0.72,0.72,0.0,0
+chain_source_bottleneck,Stage 3,0.72,0.72,0.0,0
+gone_abat_jap,Stage 1,0.8499999999996504,0.8499999999996496,0.0,0
+gone_abat_jap,Stage 2,0.8499999999996504,0.9020152785693696,5.535052961830228,0
+gone_abat_jap,Stage 3,0.8499999999996504,0.9020152785693698,5.417942221229176,0
+star_edge_bottleneck,Stage 1,0.7,0.7,0.0,0
+star_edge_bottleneck,Stage 2,0.7,0.7857142857142857,0.0,0
+star_edge_bottleneck,Stage 3,0.7,0.7857142857142857,0.0,0
+temporal_lexicographic,Stage 1,0.6,0.6,0.0,0
+temporal_lexicographic,Stage 2,0.6,0.7333333333333333,0.75,0
+temporal_lexicographic,Stage 3,0.6,0.7333333333333333,0.40000000000000113,0
+tie_bottleneck,Stage 1,0.75,0.75,0.0,0
+tie_bottleneck,Stage 2,0.75,0.75,0.0,0
+tie_bottleneck,Stage 3,0.75,0.75,0.0,0

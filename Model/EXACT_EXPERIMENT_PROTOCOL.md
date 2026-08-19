@@ -1,0 +1,62 @@
+# Exact deterministic experiment protocol
+
+## Evidence question
+
+Do the analytical formulae and equivalent formulations of the deterministic lexicographic tree-flow model agree exactly on independently constructed rooted-tree benchmark instances, and does the third lexicographic stage provide a strictly smoother selector when Stage 2 is degenerate?
+
+## Benchmark family
+
+1. `chain_source_bottleneck`: source-limited chain;
+2. `star_edge_bottleneck`: unique local-edge bottleneck;
+3. `branching_shared_edge_bottleneck`: shared internal-edge bottleneck;
+4. `tie_bottleneck`: simultaneous source and edge bottlenecks;
+5. `temporal_lexicographic`: multiple Stage-2 optima and strict Stage-3 smoothing.
+
+## E1. Closed-form verification
+
+For each benchmark compute $\lambda^{\mathrm{cf}}$ exactly and solve Stage 1 with HiGHS. Require
+
+$$
+|\lambda^{\mathrm{LP}}-\lambda^{\mathrm{cf}}|\le5\times10^{-7}.
+$$
+
+## E2. Operator-balance equivalence
+
+Set the canonical Stage-1 vector $r_{kf}=\lambda^*$. Compute gross flows by:
+
+1. path-product graph operator;
+2. reverse-topological node-balance recursion.
+
+Require exact rational equality for every edge-period pair and exact zero node residual.
+
+## E3. Lexicographic preservation
+
+For all instances, solve all three stages and verify:
+
+$$
+\min r^{(2)}\ge\lambda^*,
+\qquad
+\min r^{(3)}\ge\lambda^*,
+$$
+
+$$
+S(r^{(3)})\ge S(r^{(2)})-\tau,
+$$
+
+$$
+\Omega(r^{(3)})\le\Omega(r^{(2)})+\tau.
+$$
+
+## E4. Strict smoothing challenge
+
+For `temporal_lexicographic`, require
+
+$$
+\Omega(r^{(3)})<\Omega(r^{(2)}).
+$$
+
+The current prespecified instance yields $0.75$ at Stage 2 and approximately $0.40$ at Stage 3.
+
+## E5. Reproducibility
+
+Record dependency versions, platform information, input SHA-256 hashes, output SHA-256 hashes, and UTC generation time. Rerunning the same commit and dependency set must reproduce all exact tables and preserve numerical values within the declared tolerance.

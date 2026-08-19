@@ -1,0 +1,18 @@
+{
+  "name": "chain_source_bottleneck",
+  "description": "A single-user chain in which the source volume determines the Stage-1 optimum.",
+  "nodes": ["s", "a", "t1"],
+  "source": "s",
+  "edges": [
+    {"id": "e1", "tail": "s", "head": "a"},
+    {"id": "e2", "tail": "a", "head": "t1"}
+  ],
+  "users": [
+    {"id": "f1", "terminal": "t1", "weight": "1"}
+  ],
+  "periods": ["k1"],
+  "demand": {"k1": {"f1": "100"}},
+  "source_capacity": {"k1": "100"},
+  "edge_capacity": {"k1": {"e1": "1000", "e2": "1000"}},
+  "efficiency": {"k1": {"e1": "9/10", "e2": "4/5"}}
+}

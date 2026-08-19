@@ -1,0 +1,7 @@
+benchmark,leximin_minimum_ratio,leximin_weighted_satisfaction,leximin_temporal_variation,leximin_levels
+branching_shared_edge_bottleneck,0.7806122448979591,0.823922902494331,0.0,0.780612; 0.888889
+chain_source_bottleneck,0.72,0.72,0.0,0.720000
+gone_abat_jap,,,,skipped: Leximin refused: 308 active records exceeds max_records=64. Progressive filling is intended for the small exact benchmarks; raise max_records explicitly to force it.
+star_edge_bottleneck,0.7000000000000001,0.7857142857142857,0.0,0.700000; 0.900000
+temporal_lexicographic,0.6,0.7333333333333333,0.40000000000000024,0.600000; 0.800000
+tie_bottleneck,0.75,0.75,0.0,0.750000

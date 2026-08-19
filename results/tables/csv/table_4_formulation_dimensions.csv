@@ -1,0 +1,19 @@
+benchmark,stage,variables,principal_constraints
+branching_shared_edge_bottleneck,Stage 1,4,9
+branching_shared_edge_bottleneck,Stage 2,3,6
+branching_shared_edge_bottleneck,Stage 3,3,7
+chain_source_bottleneck,Stage 1,2,4
+chain_source_bottleneck,Stage 2,1,3
+chain_source_bottleneck,Stage 3,1,4
+gone_abat_jap,Stage 1,309,884
+gone_abat_jap,Stage 2,308,576
+gone_abat_jap,Stage 3,596,1153
+star_edge_bottleneck,Stage 1,3,5
+star_edge_bottleneck,Stage 2,2,3
+star_edge_bottleneck,Stage 3,2,4
+temporal_lexicographic,Stage 1,7,15
+temporal_lexicographic,Stage 2,6,9
+temporal_lexicographic,Stage 3,10,18
+tie_bottleneck,Stage 1,3,5
+tie_bottleneck,Stage 2,2,3
+tie_bottleneck,Stage 3,2,4

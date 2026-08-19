@@ -1,0 +1,31 @@
+{
+  "name": "temporal_lexicographic",
+  "description": "A three-period two-user benchmark with multiple Stage-2 optima and a strictly smoother Stage-3 selector.",
+  "nodes": ["s", "t1", "t2"],
+  "source": "s",
+  "edges": [
+    {"id": "e1", "tail": "s", "head": "t1"},
+    {"id": "e2", "tail": "s", "head": "t2"}
+  ],
+  "users": [
+    {"id": "f1", "terminal": "t1", "weight": "1"},
+    {"id": "f2", "terminal": "t2", "weight": "1"}
+  ],
+  "periods": ["k1", "k2", "k3"],
+  "demand": {
+    "k1": {"f1": "8", "f2": "2"},
+    "k2": {"f1": "2", "f2": "8"},
+    "k3": {"f1": "8", "f2": "2"}
+  },
+  "source_capacity": {"k1": "8", "k2": "8", "k3": "6"},
+  "edge_capacity": {
+    "k1": {"e1": "100", "e2": "100"},
+    "k2": {"e1": "100", "e2": "100"},
+    "k3": {"e1": "100", "e2": "100"}
+  },
+  "efficiency": {
+    "k1": {"e1": "1", "e2": "1"},
+    "k2": {"e1": "1", "e2": "1"},
+    "k3": {"e1": "1", "e2": "1"}
+  }
+}

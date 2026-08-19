@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=75", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "appliedmath-lexflow"
+version = "0.3.0"
+description = "Reproducible deterministic lexicographic flow allocation on lossy capacitated trees"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [{name = "Adilbay Qudaybergenov"}]
+dependencies = [
+  "matplotlib>=3.9",
+  "networkx>=3.4",
+  "numpy>=2.1",
+  "openpyxl>=3.1",
+  "pandas>=2.2",
+  "scipy>=1.14",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "ruff>=0.9"]
+docs = ["python-docx>=1.1"]
+
+[project.scripts]
+appliedmath-lexflow = "appliedmath_lexflow.app:main"
+appliedmath-lexflow-gui = "appliedmath_lexflow.desktop_gui:main"
+appliedmath-lexflow-analysis = "appliedmath_lexflow.cli:main"
+appliedmath-lexflow-demo = "appliedmath_lexflow.demo:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "-q"

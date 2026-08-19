@@ -1,0 +1,7 @@
+benchmark,edge_period_pairs,max_exact_operator_balance_difference,max_exact_node_residual,max_stage3_physical_violation
+branching_shared_edge_bottleneck,5,0,0,0.0
+chain_source_bottleneck,2,0,0,0.0
+gone_abat_jap,560,0,0,1.1641532182693481e-10
+star_edge_bottleneck,2,0,0,7.105427357601002e-15
+temporal_lexicographic,6,0,0,0.0
+tie_bottleneck,2,0,0,0.0

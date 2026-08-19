@@ -1,0 +1,23 @@
+.venv/
+my-env/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+build/
+dist/
+*.egg-info/
+
+# Private manuscript/template workspace. The MDPI template is for submission use,
+# not for public redistribution in the supplementary-software repository.
+Paper/
+Model/*.docx
+tools/
+
+# Local review and Drive-transfer notes, not scientific release assets.
+docs/
+requirements-docs.txt
+PROJECT_STATUS_UZ.md
+UPLOAD_TO_DRIVE.md
+
+# Article outputs are versioned deliberately. Do not ignore results/.

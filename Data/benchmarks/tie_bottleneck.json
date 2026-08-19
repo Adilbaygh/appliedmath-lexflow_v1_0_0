@@ -1,0 +1,19 @@
+{
+  "name": "tie_bottleneck",
+  "description": "A star with simultaneous source and local-edge bottlenecks at lambda=3/4.",
+  "nodes": ["s", "t1", "t2"],
+  "source": "s",
+  "edges": [
+    {"id": "e1", "tail": "s", "head": "t1"},
+    {"id": "e2", "tail": "s", "head": "t2"}
+  ],
+  "users": [
+    {"id": "f1", "terminal": "t1", "weight": "1"},
+    {"id": "f2", "terminal": "t2", "weight": "1"}
+  ],
+  "periods": ["k1"],
+  "demand": {"k1": {"f1": "40", "f2": "60"}},
+  "source_capacity": {"k1": "75"},
+  "edge_capacity": {"k1": {"e1": "30", "e2": "100"}},
+  "efficiency": {"k1": {"e1": "1", "e2": "1"}}
+}

@@ -1,0 +1,16 @@
+{
+  "benchmark_count": 6,
+  "closed_form_max_difference": 1.1102230246251565e-16,
+  "operator_exact_max_difference": "0",
+  "node_exact_max_residual": "0",
+  "max_stage3_physical_violation": 1.1641532182693481e-10,
+  "temporal_omega_min": 0.40000000000000047,
+  "temporal_omega_max": 1.05,
+  "temporal_variation_reduction_fraction_invariant": 0.6190476190476186,
+  "temporal_stage2_variation_solver_vertex": 0.75,
+  "temporal_stage3_variation": 0.40000000000000113,
+  "temporal_leximin_variation": 0.40000000000000024,
+  "verification_status": "PASS",
+  "manifest": "results/manifests/run_manifest.json",
+  "figure_warnings": []
+}

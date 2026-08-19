@@ -1,0 +1,442 @@
+"""Pure backend services used by the AppliedMath desktop application.
+
+The functions in this module do not create GUI objects.  They are therefore easy
+to test in headless CI environments and guarantee that the desktop application,
+ command-line demo, and article-output pipeline use the same mathematical code.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from datetime import datetime
+from fractions import Fraction
+from pathlib import Path
+import json
+import subprocess
+import sys
+
+import pandas as pd
+
+from .domain import Benchmark
+from .examples import load_all_benchmarks
+from .lexicographic import ThreeStageSolution, solve_three_stage
+from .operators import build_operator_exact
+from .stage1 import Stage1ClosedForm, Stage1LP, solve_stage1_closed_form, solve_stage1_lp
+from .tables import write_table
+from .verification import OperatorVerification, maximum_physical_violation, verify_operator_exact
+
+
+_BENCHMARK_DESCRIPTIONS_UZ = {
+    "branching_shared_edge_bottleneck": (
+        "Иккита қуйи истеъмолчи учун умумий ички қирра чекловчи ресурс бўладиган "
+        "тармоқланувчи дарахт мисоли."
+    ),
+    "chain_source_bottleneck": (
+        "Бир истеъмолчили кетма-кет канал занжири; биринчи босқич оптимумини манба "
+        "ҳажми белгилайди."
+    ),
+    "star_edge_bottleneck": (
+        "Икки терминалли юлдузсимон тармоқ; битта маҳаллий қирра ягона чекловчи "
+        "ресурс ҳисобланади."
+    ),
+    "temporal_lexicographic": (
+        "Уч давр ва икки истеъмолчидан иборат вақтли мисол; иккинчи босқичда бир нечта "
+        "тенг оптимал ечим мавжуд, учинчи босқич эса улар орасидан вақт бўйича "
+        "силлиқроқ тақсимотни танлайди."
+    ),
+    "tie_bottleneck": (
+        "Манба ва маҳаллий қирра бир вақтда $\\lambda=3/4$ қийматида чекловчи "
+        "ресурс бўладиган юлдузсимон тармоқ."
+    ),
+}
+
+
+def benchmark_description_uz(model: Benchmark) -> str:
+    """Return a user-facing Uzbek description while preserving the source benchmark."""
+
+    return _BENCHMARK_DESCRIPTIONS_UZ.get(model.name, model.description)
+
+
+def resource_label_uz(label: str) -> str:
+    if label == "demand_upper_bound":
+        return "талабнинг юқори чегараси"
+    if label.startswith("source:"):
+        return "манба:" + label.removeprefix("source:")
+    if label.startswith("edge:"):
+        return "қирра:" + label.removeprefix("edge:")
+    return label
+
+
+@dataclass(frozen=True, slots=True)
+class BenchmarkSnapshot:
+    """Complete deterministic solution and verification record for one benchmark."""
+
+    model: Benchmark
+    closed_form: Stage1ClosedForm
+    stage1_lp: Stage1LP
+    operator_verification: OperatorVerification
+    solution: ThreeStageSolution
+    maximum_physical_violation: float
+
+    @property
+    def closed_form_lp_difference(self) -> float:
+        return abs(self.stage1_lp.lambda_star - float(self.closed_form.lambda_star))
+
+    @property
+    def verification_passed(self) -> bool:
+        return all(row[3] == "PASS" for row in verification_rows(self))
+
+
+@dataclass(frozen=True, slots=True)
+class ResultFile:
+    relative_path: str
+    size_bytes: int
+    modified_at: str
+
+
+def fraction_string(value: Fraction) -> str:
+    """Return an exact rational value without losing precision."""
+
+    return str(value.numerator) if value.denominator == 1 else f"{value.numerator}/{value.denominator}"
+
+
+def find_project_root(start: str | Path | None = None) -> Path:
+    """Locate the repository root from a launcher, package, or current directory."""
+
+    if start is None:
+        start_path = Path.cwd()
+    else:
+        start_path = Path(start).expanduser().resolve()
+
+    if start_path.is_file():
+        start_path = start_path.parent
+
+    candidates = (start_path, *start_path.parents)
+    for candidate in candidates:
+        if (candidate / "Data" / "benchmarks").is_dir() and (candidate / "pyproject.toml").is_file():
+            return candidate
+
+    package_root = Path(__file__).resolve().parents[2]
+    for candidate in (package_root, *package_root.parents):
+        if (candidate / "Data" / "benchmarks").is_dir() and (candidate / "pyproject.toml").is_file():
+            return candidate
+
+    raise FileNotFoundError(
+        "AppliedMath project root was not found. Open the repository root in VS Code "
+        "or start the application from the folder containing pyproject.toml."
+    )
+
+
+def load_benchmarks(project_root: str | Path) -> dict[str, Benchmark]:
+    root = find_project_root(project_root)
+    models = load_all_benchmarks(root / "Data" / "benchmarks")
+    if not models:
+        raise FileNotFoundError(f"No benchmark JSON files were found in {root / 'Data' / 'benchmarks'}")
+    return {model.name: model for model in models}
+
+
+def benchmark_names(project_root: str | Path) -> tuple[str, ...]:
+    return tuple(sorted(load_benchmarks(project_root)))
+
+
+def _solve_snapshot(model: Benchmark) -> BenchmarkSnapshot:
+    closed = solve_stage1_closed_form(model)
+    stage1_lp = solve_stage1_lp(model)
+    canonical_ratios = {record: closed.lambda_star for record in model.active_records}
+    operator_verification = verify_operator_exact(model, canonical_ratios)
+    solution = solve_three_stage(model)
+    a_coeff, b_coeff = build_operator_exact(model)
+    physical_violation = maximum_physical_violation(
+        model, solution.stage3.ratios, a_coeff, b_coeff
+    )
+    return BenchmarkSnapshot(
+        model=model,
+        closed_form=closed,
+        stage1_lp=stage1_lp,
+        operator_verification=operator_verification,
+        solution=solution,
+        maximum_physical_violation=physical_violation,
+    )
+
+
+def solve_benchmark(project_root: str | Path, benchmark_name: str) -> BenchmarkSnapshot:
+    """Solve all three deterministic stages and run independent checks."""
+
+    models = load_benchmarks(project_root)
+    try:
+        model = models[benchmark_name]
+    except KeyError as exc:
+        available = ", ".join(sorted(models))
+        raise KeyError(f"Unknown benchmark {benchmark_name!r}. Available: {available}") from exc
+    return _solve_snapshot(model)
+
+
+def solve_benchmark_at_path(path: str | Path) -> BenchmarkSnapshot:
+    """Load and solve a single benchmark JSON file at an arbitrary path.
+
+    Used by the desktop app's file-open dialog, which lets the user pick any
+    benchmark file directly instead of choosing a name from a preloaded list.
+    """
+    from .io import load_benchmark
+
+    model = load_benchmark(Path(path))
+    return _solve_snapshot(model)
+
+
+def stage_rows(snapshot: BenchmarkSnapshot) -> tuple[tuple[str, str, str, str, str], ...]:
+    """Return presentation-ready Stage 1/2/3 rows."""
+
+    rows: list[tuple[str, str, str, str, str]] = []
+    for stage in (snapshot.solution.stage1, snapshot.solution.stage2, snapshot.solution.stage3):
+        rows.append(
+            (
+                ({"Stage 1": "1-босқич", "Stage 2": "2-босқич", "Stage 3": "3-босқич"}.get(stage.name, stage.name)),
+                f"{stage.minimum_ratio:.9f}",
+                f"{stage.weighted_satisfaction:.9f}",
+                f"{stage.temporal_variation:.9f}",
+                "ОПТИМАЛ" if stage.status == 0 else str(stage.status),
+            )
+        )
+    return tuple(rows)
+
+
+def ratio_rows(snapshot: BenchmarkSnapshot) -> tuple[tuple[str, str, str, str, str, str], ...]:
+    """Return one row per active period-user record."""
+
+    model = snapshot.model
+    result: list[tuple[str, str, str, str, str, str]] = []
+    for period, user in model.active_records:
+        result.append(
+            (
+                period,
+                user,
+                fraction_string(model.demand[period][user]),
+                f"{snapshot.solution.stage1.ratios[(period, user)]:.9f}",
+                f"{snapshot.solution.stage2.ratios[(period, user)]:.9f}",
+                f"{snapshot.solution.stage3.ratios[(period, user)]:.9f}",
+            )
+        )
+    return tuple(result)
+
+
+def verification_rows(
+    snapshot: BenchmarkSnapshot,
+    tolerance: float = 5e-7,
+) -> tuple[tuple[str, str, str, str], ...]:
+    """Return declared analytical and numerical verification gates."""
+
+    solution = snapshot.solution
+    lambda_star = float(snapshot.closed_form.lambda_star)
+    checks: list[tuple[str, str, str, bool]] = [
+        (
+            "Ёпиқ ечим — LP мослиги",
+            f"{snapshot.closed_form_lp_difference:.3e}",
+            f"≤ {tolerance:.1e}",
+            snapshot.closed_form_lp_difference <= tolerance,
+        ),
+        (
+            "Graph operator — node balance фарқи",
+            fraction_string(snapshot.operator_verification.maximum_absolute_difference),
+            "= 0 (аниқ арифметика)",
+            snapshot.operator_verification.maximum_absolute_difference == 0,
+        ),
+        (
+            "Тугун баланси қолдиғи",
+            fraction_string(snapshot.operator_verification.maximum_node_residual),
+            "= 0 (аниқ арифметика)",
+            snapshot.operator_verification.maximum_node_residual == 0,
+        ),
+        (
+            "3-босқич физик чеклов бузилиши",
+            f"{snapshot.maximum_physical_violation:.3e}",
+            f"≤ {tolerance:.1e}",
+            snapshot.maximum_physical_violation <= tolerance,
+        ),
+        (
+            "3-босқич адолат кафолати",
+            f"{solution.stage3.minimum_ratio:.9f}",
+            f"≥ λ* = {lambda_star:.9f}",
+            solution.stage3.minimum_ratio + tolerance >= lambda_star,
+        ),
+        (
+            "3-босқич қониқишни сақлаши",
+            f"{solution.stage3.weighted_satisfaction:.9f}",
+            f"≥ 2-босқич = {solution.stage2.weighted_satisfaction:.9f}",
+            solution.stage3.weighted_satisfaction + tolerance
+            >= solution.stage2.weighted_satisfaction,
+        ),
+        (
+            "3-босқич вариацияни оширмаслиги",
+            f"{solution.stage3.temporal_variation:.9f}",
+            f"≤ 2-босқич = {solution.stage2.temporal_variation:.9f}",
+            solution.stage3.temporal_variation
+            <= solution.stage2.temporal_variation + tolerance,
+        ),
+    ]
+    return tuple((name, value, criterion, "PASS" if passed else "FAIL") for name, value, criterion, passed in checks)
+
+
+def result_files(project_root: str | Path) -> tuple[ResultFile, ...]:
+    root = find_project_root(project_root)
+    output_root = root / "results"
+    if not output_root.exists():
+        return ()
+    items: list[ResultFile] = []
+    for path in sorted(output_root.rglob("*")):
+        if not path.is_file():
+            continue
+        stat = path.stat()
+        items.append(
+            ResultFile(
+                relative_path=str(path.relative_to(root)),
+                size_bytes=stat.st_size,
+                modified_at=datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S"),
+            )
+        )
+    return tuple(items)
+
+
+def export_snapshot(snapshot: BenchmarkSnapshot, project_root: str | Path) -> tuple[Path, Path]:
+    """Export current GUI values without replacing article-wide generated assets.
+
+    Writes both a ``csv/`` copy (for downstream processing) and an ``excel/``
+    copy (convenient for people to open directly).
+    """
+
+    root = find_project_root(project_root)
+    export_dir = root / "results" / "gui_exports"
+    safe_name = snapshot.model.name.replace(" ", "_")
+
+    ratios_frame = pd.DataFrame(
+        ratio_rows(snapshot),
+        columns=["period", "user", "demand", "stage1_ratio", "stage2_ratio", "stage3_ratio"],
+    )
+    verification_frame = pd.DataFrame(
+        verification_rows(snapshot), columns=["check", "value", "criterion", "status"]
+    )
+    write_table(ratios_frame, export_dir, f"{safe_name}_allocation_ratios")
+    write_table(verification_frame, export_dir, f"{safe_name}_verification")
+
+    ratios_path = export_dir / "csv" / f"{safe_name}_allocation_ratios.csv"
+    verification_path = export_dir / "csv" / f"{safe_name}_verification.csv"
+
+    return ratios_path, verification_path
+
+
+
+def generate_article_results(project_root: str | Path) -> dict[str, object]:
+    """Generate all publication assets in an isolated Python process.
+
+    Matplotlib is kept outside the Tk worker thread, which avoids GUI-backend
+    conflicts on Windows and leaves the article pipeline identical to CLI use.
+    """
+
+    root = find_project_root(project_root)
+    completed = subprocess.run(
+        [sys.executable, str(root / "main.py"), "analysis"],
+        cwd=root,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        check=False,
+    )
+    if completed.returncode != 0:
+        output = "\n".join(
+            part for part in (completed.stdout, completed.stderr) if part
+        ).strip()
+        raise RuntimeError(output or "Мақола натижаларини яратишда номаълум хато.")
+
+    summary_path = root / "results" / "RESULTS_SUMMARY.json"
+    if not summary_path.is_file():
+        raise FileNotFoundError(
+            "Pipeline тугади, аммо results/RESULTS_SUMMARY.json топилмади."
+        )
+    return json.loads(summary_path.read_text(encoding="utf-8"))
+
+
+def save_benchmark_result(
+    project_root: str | Path, benchmark_path: str | Path, output_dir: str | Path
+) -> dict[str, object]:
+    """Save one benchmark's full figure/table/figure_data package in an isolated process.
+
+    Works for any benchmark file, not only ones under Data/benchmarks/ — this
+    backs the desktop app's "Натижани сақлаш" (Save Result) action, which
+    saves whichever file the user currently has open. Matplotlib is kept
+    outside the Tk worker thread for the same reason as
+    :func:`generate_article_results`.
+    """
+
+    root = find_project_root(project_root)
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(root / "main.py"),
+            "save-result",
+            "--benchmark-path",
+            str(benchmark_path),
+            "--output-dir",
+            str(output_dir),
+        ],
+        cwd=root,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        check=False,
+    )
+    if completed.returncode != 0:
+        output = "\n".join(
+            part for part in (completed.stdout, completed.stderr) if part
+        ).strip()
+        raise RuntimeError(output or "Натижани сақлашда номаълум хато.")
+
+    lines = [line for line in completed.stdout.strip().splitlines() if line.strip()]
+    if not lines:
+        raise RuntimeError("Pipeline тугади, аммо натижа маълумоти қайтарилмади.")
+    try:
+        return json.loads(lines[-1])
+    except ValueError as exc:
+        raise RuntimeError(f"Натижа JSON'ини ўқиб бўлмади:\n{completed.stdout}") from exc
+
+
+def run_tests(project_root: str | Path) -> tuple[int, str]:
+    """Run the repository test suite with the selected Python interpreter."""
+
+    root = find_project_root(project_root)
+    completed = subprocess.run(
+        [sys.executable, "-m", "pytest", "-p", "no:cacheprovider"],
+        cwd=root,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        check=False,
+    )
+    output = "\n".join(part for part in (completed.stdout, completed.stderr) if part).strip()
+    return completed.returncode, output
+
+
+def users_with_activity(model: Benchmark) -> tuple[str, ...]:
+    active_users = {user for _, user in model.active_records}
+    return tuple(user for user in model.user_ids if user in active_users)
+
+
+def period_series(
+    snapshot: BenchmarkSnapshot,
+    user: str,
+) -> tuple[tuple[str, ...], tuple[float, ...], tuple[float, ...], tuple[float, ...]]:
+    model = snapshot.model
+    periods: list[str] = []
+    stage1_values: list[float] = []
+    stage2_values: list[float] = []
+    stage3_values: list[float] = []
+    for period in model.periods:
+        record = (period, user)
+        if record not in snapshot.solution.stage3.ratios:
+            continue
+        periods.append(period)
+        stage1_values.append(snapshot.solution.stage1.ratios[record])
+        stage2_values.append(snapshot.solution.stage2.ratios[record])
+        stage3_values.append(snapshot.solution.stage3.ratios[record])
+    return tuple(periods), tuple(stage1_values), tuple(stage2_values), tuple(stage3_values)

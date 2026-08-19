@@ -1,0 +1,7 @@
+benchmark,nodes,edges,users,periods,lambda_closed_form_exact,lambda_closed_form,lambda_lp,absolute_difference,active_resources
+branching_shared_edge_bottleneck,6,5,3,1,153/196,0.7806122448979592,0.7806122448979591,1.1102230246251565e-16,edge:k1:e2
+chain_source_bottleneck,3,2,1,1,18/25,0.72,0.72,0.0,source:k1
+gone_abat_jap,36,35,20,16,489061655669511240854544523485423/575366653729073409930683320905560,0.8499999999996504,0.8499999999996503,1.1102230246251565e-16,source:23
+star_edge_bottleneck,3,2,2,1,7/10,0.7,0.7000000000000001,1.1102230246251565e-16,edge:k1:e1
+temporal_lexicographic,3,2,2,3,3/5,0.6,0.6,0.0,source:k3
+tie_bottleneck,3,2,2,1,3/4,0.75,0.75,0.0,source:k1; edge:k1:e1

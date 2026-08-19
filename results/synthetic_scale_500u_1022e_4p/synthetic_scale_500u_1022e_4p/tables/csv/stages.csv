@@ -1,0 +1,4 @@
+stage,minimum_service_ratio,weighted_satisfaction,temporal_variation,solver_status
+Stage 1,0.6,0.6000000000000001,0.0,0
+Stage 2,0.6,0.7499735770906234,150.05263157894734,0
+Stage 3,0.6,0.7499735770906228,129.81333333333208,0

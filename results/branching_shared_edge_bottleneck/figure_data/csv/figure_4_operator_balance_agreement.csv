@@ -1,0 +1,6 @@
+benchmark,period,edge,operator_flow,node_balance_flow,exact_difference
+branching_shared_edge_bottleneck,k1,e0,111.11111111112015,111.11111111112015,0
+branching_shared_edge_bottleneck,k1,e1,40.000000000005,40.000000000005,0
+branching_shared_edge_bottleneck,k1,e2,60.00000000000314,60.00000000000314,0
+branching_shared_edge_bottleneck,k1,e3,24.979591836736,24.979591836736,0
+branching_shared_edge_bottleneck,k1,e4,26.020408163266666,26.020408163266666,0

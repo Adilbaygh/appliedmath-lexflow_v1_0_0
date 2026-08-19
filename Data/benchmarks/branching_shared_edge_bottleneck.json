@@ -1,0 +1,23 @@
+{
+  "name": "branching_shared_edge_bottleneck",
+  "description": "A branching tree in which a shared internal edge limits two downstream users.",
+  "nodes": ["s", "a", "b", "t1", "t2", "t3"],
+  "source": "s",
+  "edges": [
+    {"id": "e0", "tail": "s", "head": "a"},
+    {"id": "e1", "tail": "a", "head": "t1"},
+    {"id": "e2", "tail": "a", "head": "b"},
+    {"id": "e3", "tail": "b", "head": "t2"},
+    {"id": "e4", "tail": "b", "head": "t3"}
+  ],
+  "users": [
+    {"id": "f1", "terminal": "t1", "weight": "1"},
+    {"id": "f2", "terminal": "t2", "weight": "1"},
+    {"id": "f3", "terminal": "t3", "weight": "1"}
+  ],
+  "periods": ["k1"],
+  "demand": {"k1": {"f1": "36", "f2": "24", "f3": "30"}},
+  "source_capacity": {"k1": "120"},
+  "edge_capacity": {"k1": {"e0": "150", "e1": "40", "e2": "60", "e3": "30", "e4": "32"}},
+  "efficiency": {"k1": {"e0": "9/10", "e1": "4/5", "e2": "17/20", "e3": "3/4", "e4": "9/10"}}
+}

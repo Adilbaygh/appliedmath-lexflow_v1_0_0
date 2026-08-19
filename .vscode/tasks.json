@@ -1,0 +1,45 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Setup: Install project in selected interpreter",
+      "type": "process",
+      "command": "${command:python.interpreterPath}",
+      "args": ["-m", "pip", "install", "-e", ".[dev]"],
+      "options": {"cwd": "${workspaceFolder}"},
+      "problemMatcher": []
+    },
+    {
+      "label": "GUI: Start AppliedMath desktop app",
+      "type": "process",
+      "command": "${command:python.interpreterPath}",
+      "args": ["main.py"],
+      "options": {"cwd": "${workspaceFolder}"},
+      "problemMatcher": []
+    },
+    {
+      "label": "Demo: Step-by-step temporal benchmark",
+      "type": "process",
+      "command": "${command:python.interpreterPath}",
+      "args": ["main.py", "demo", "--benchmark", "temporal_lexicographic"],
+      "options": {"cwd": "${workspaceFolder}"},
+      "problemMatcher": []
+    },
+    {
+      "label": "Analysis: Generate article results",
+      "type": "process",
+      "command": "${command:python.interpreterPath}",
+      "args": ["main.py", "analysis"],
+      "options": {"cwd": "${workspaceFolder}"},
+      "problemMatcher": []
+    },
+    {
+      "label": "Test: Run pytest",
+      "type": "process",
+      "command": "${command:python.interpreterPath}",
+      "args": ["-m", "pytest", "-p", "no:cacheprovider"],
+      "options": {"cwd": "${workspaceFolder}"},
+      "problemMatcher": []
+    }
+  ]
+}

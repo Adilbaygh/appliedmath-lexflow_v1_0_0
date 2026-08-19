@@ -1,0 +1,13 @@
+{
+  "benchmark": "synthetic_scale_500u_1022e_4p",
+  "source_file": "C:\\Projects\\appliedmath-lexflow\\Data\\synthetic_scale_500u_1022e_4p.json",
+  "output_folder": "C:\\Projects\\appliedmath-lexflow\\results\\synthetic_scale_500u_1022e_4p\\synthetic_scale_500u_1022e_4p",
+  "nodes": 1023,
+  "edges": 1022,
+  "users": 500,
+  "periods": 4,
+  "lambda_closed_form_exact": "3/5",
+  "lambda_closed_form": 0.6,
+  "lambda_lp": 0.6000000000000001,
+  "verification_status": "PASS"
+}
