@@ -5,11 +5,11 @@
 Let all path coefficients, source coefficients, and demands be nonnegative. Let route assignments be fixed, and assume that the model contains no discrete activation, minimum-delivery, storage, or other inter-period coupling constraints. Then the Stage-1 optimum is
 
 $$
-\lambda^*=\min\left\{
+\lambda^*=\min\left\lbrace
 1,
 \min_{k:L_k^s>0}\frac{Q_k}{L_k^s},
 \min_{k,e:L_{ke}^e>0}\frac{C_{ke}}{L_{ke}^e}
-\right\}.
+\right\rbrace.
 $$
 
 ### Proof
@@ -75,7 +75,7 @@ by $\eta_{k e_v}$ appends the factor $\eta_{k e_v}^{-1}$ to every downstream pat
 Let the positive-load resources be indexed by $j$, with normalized capacities $\xi_j=c_j/L_j$. Then
 
 $$
-\lambda^*(\xi)=\min\{1,\xi_1,\ldots,\xi_m\}.
+\lambda^*(\xi)=\min\lbrace1,\xi_1,\ldots,\xi_m\rbrace.
 $$
 
 Consequently, $\lambda^*$ is componentwise nondecreasing, continuous, concave, and piecewise linear. Nondifferentiability occurs only at bottleneck-switch surfaces where two or more active affine pieces coincide.
