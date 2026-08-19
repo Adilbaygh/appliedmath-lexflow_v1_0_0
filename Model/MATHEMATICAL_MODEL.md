@@ -12,7 +12,7 @@ Sets:
 
 - $K$: ordered planning periods;
 - $F$: service blocks;
-- $\mathcal I=\{(k,f):d_{kf}>0\}$: active service records;
+- $\mathcal I=\lbrace(k,f):d_{kf}>0\rbrace$: active service records;
 - $P_f$: unique source-to-terminal edge path for user $f$.
 
 Fixed parameters:
@@ -117,7 +117,7 @@ $$
 Then
 
 $$
-\lambda^*=\min\left\{ 1,\ \min_{k:L_k^s>0}\frac{Q_k}{L_k^s},\ \min_{k,e:L_{ke}^e>0}\frac{C_{ke}}{L_{ke}^e} \right\}.
+\lambda^*=\min\left\lbrace 1,\ \min_{k:L_k^s>0}\frac{Q_k}{L_k^s},\ \min_{k,e:L_{ke}^e>0}\frac{C_{ke}}{L_{ke}^e} \right\rbrace.
 $$
 
 ## 7. Stage 2: weighted seasonal satisfaction
