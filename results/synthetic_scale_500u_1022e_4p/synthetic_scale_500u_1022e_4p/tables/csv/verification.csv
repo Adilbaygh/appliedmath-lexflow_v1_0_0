@@ -1,8 +1,0 @@
-check,passed
-closed_form_lp_agreement,True
-operator_balance_exact,True
-node_balance_exact,True
-stage3_physical_violation,True
-stage3_fairness_preserved,True
-stage3_satisfaction_preserved,True
-stage3_variation_not_increased,True
