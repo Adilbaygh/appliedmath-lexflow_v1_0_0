@@ -227,13 +227,22 @@ def generate_results(project_root: str | Path) -> dict[str, object]:
                 "price_of_fairness": pof.price_of_fairness,
             }
         )
+        # Compute the leximin certificate for every benchmark. Small exact
+        # benchmarks solve at the default 1e-7 tolerance; large real-network
+        # instances (e.g. gone_abat_jap, 308 active records) need a relaxed
+        # feasibility tolerance because the loss-adjusted operator coefficients
+        # span several orders of magnitude. Size the tolerance by the instance
+        # and lift the max_records guard rather than skipping the row.
+        n_records = len(model.active_records)
+        lex_tol = 1e-6 if n_records > 64 else 1e-7
         try:
-            lex = solve_leximin(model)
-        except ValueError as exc:
-            # Progressive filling is O(records) LPs per round; it is refused on
-            # benchmarks far larger than the exact article examples (e.g. the
-            # real-network gone_abat_jap). Record the skip explicitly rather than
-            # crash or silently omit the row.
+            lex = solve_leximin(
+                model,
+                max_records=None,
+                feasibility_tolerance=lex_tol,
+                slack=lex_tol,
+            )
+        except RuntimeError as exc:
             leximin_rows.append(
                 {
                     "benchmark": model.name,

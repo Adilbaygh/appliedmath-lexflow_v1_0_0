@@ -59,3 +59,11 @@
 | 3 | (янги) `robust.py`, `table_5` | Price of fairness ўлчанмаган эди (таъриз M4) | `price_of_fairness`: $Z_{\text{eff}}, Z_{\text{fair}}$, PoF қўшилди |
 | 4 | (янги) `robust.py`, `table_6` | Leximin ечими йўқ эди (таъриз M1); Stage 1 ечими ягона эмас | `solve_leximin` (progressive filling): ягона вектор, вазнларсиз, degeneratsiyaсиз |
 | 5 | `tests/test_robust_invariants.py` | Нуқсонларни ушлайдиган тест йўқ эди | 5 та регрессия тести қўшилди (аниқ сақлаш, $\Omega$ оралиғи, leximin, PoF) |
+
+
+## 7. Янгиланиш (2026-08-19) — реал тармоқ leximin ва мақола-лойиҳа мослиги
+
+- `reporting.py` да leximin ҳисоби янгиланди: катта инстанслар учун (n>64, масалан `gone_abat_jap` — 308 фаол ёзув) `max_records` чекловисиз ва бўшатилган толеранс (`1e-6`) билан ечилади. Шу боис `table_6_leximin_allocation.csv` да `gone_abat_jap` энди «skipped» эмас:
+  - leximin_minimum_ratio = 0.850000, weighted_satisfaction = 0.901873, temporal_variation = 4.800000, даражалар = **0.850000; 0.900000; 1.000000**.
+- Мақола (`paper/appliedmath-manuscript_draft_latex.docx`) 1–6 блоклар + Abstract лойиҳа натижаларига мослаб янгиланди: синтетик λ*=0.60, инвариант Ω камайиш 61.9% (0.75→0.40 вертекси эмас), Price of Fairness (branching 1.20%, реал тармоқ 3.29%), leximin, реал тармоқ (Gone Abat Jap) бўлими ва расмлари.
+- Қолган: `paper/` `.gitignore` да (`Paper/`) — атайлаб; Appendix A.1 генератор рецепти матни (1.10/0.82/0.72) кейин λ*=0.60 (1.20 / 0.90–0.60) га мосланади.
