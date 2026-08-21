@@ -36,6 +36,14 @@ python -m pip install --upgrade pip
 python -m pip install -e ".[dev]"
 ```
 
+`run_manifest.json`да қайд этилган айнан аудит қилинган dependency муҳитини
+қайта яратиш учун охирги буйруқ ўрнига қуйидагиларни бажаринг:
+
+```powershell
+python -m pip install -r requirements-lock.txt
+python -m pip install -e . --no-deps
+```
+
 Пакет коди янгилангандан кейин editable installation буйруғини қайта бажариш тавсия этилади:
 
 ```powershell

@@ -29,6 +29,14 @@ python -m pip install --upgrade pip
 python -m pip install -e ".[dev]"
 ```
 
+To reproduce the audited dependency set recorded in the run manifest, replace
+the last command with:
+
+```powershell
+python -m pip install -r requirements-lock.txt
+python -m pip install -e . --no-deps
+```
+
 ## Unified entry point
 
 Launch the desktop GUI:
