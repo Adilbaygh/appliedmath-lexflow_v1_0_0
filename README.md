@@ -68,30 +68,33 @@ allocation tables and temporal profiles, network topology, verification gates,
 CSV/Excel export, automated tests, article-output generation, and a browser for
 generated result files.
 
-## Repository layout
+## Public repository layout
 
 ```text
 Model/                       mathematical specification, theorems, and proofs
-paper/                       private working manuscript files (excluded from public data package)
 Data/benchmarks/             deterministic rooted-tree benchmark instances
+Data/synthetic_*.json        deterministic scale-verification instance
 src/                         Python package and desktop application
-results/tables/               cross-benchmark comparison tables for the Results section
-results/figures/              600 dpi PNG for theory-only figures (not tied to one benchmark)
-results/figure_data/          source data for the theory-only figures
-results/<benchmark_name>/     each benchmark's own figures/ (600 dpi PNG) and figure_data/
-results/manifests/            software environment and SHA-256 provenance record
 tests/                        automated mathematical and implementation checks
+results/tables/csv/           version-controlled source tables for the Results section
+results/manifests/            version-controlled environment and SHA-256 provenance record
+.github/workflows/            deterministic continuous-integration checks
 ```
 
-Every table-bearing folder above (`tables/`, `figure_data/`, and each
-benchmark's own `figure_data/`) holds the same tables twice, in matching
-subfolders: `csv/` (for downstream/automated processing) and `excel/` (a
-directly readable `.xlsx` copy). For example:
+The public Git tree deliberately keeps the compact CSV source tables and
+provenance metadata. Run `python main.py analysis` to regenerate the complete
+local publication-output tree: 600 dpi PNG figures, figure-source CSV files,
+Excel mirrors, and benchmark-specific result folders. For example, the command
+preserves the tracked CSV file and creates its Excel mirror locally:
 
 ```text
 results/tables/csv/table_1_closed_form_verification.csv
 results/tables/excel/table_1_closed_form_verification.xlsx
 ```
+
+The private manuscript, licensed journal template, local review files, and
+Mendeley upload workspace are intentionally excluded from the public software
+repository.
 
 ## Reproducibility gates
 
@@ -122,11 +125,12 @@ guarantee from every Stage-2 optimum.
 
 ## Public software release
 
-The public repository should contain the code, model documentation, benchmark
-data, tests, source tables, and reproducibility metadata. The private Uzbek
-manuscript and licensed journal template remain outside the curated Mendeley
-package. Before publication, add the real tagged repository URL to
-`CITATION.cff`, decide whether the new archive is Version 2 of the existing Gone
-Abat Jap dataset or a distinct related dataset, and cite the assigned DOI in the
-Data and Code Availability Statement. The local upload metadata and package
-builder are under `mendeley/` and `scripts/build_mendeley_package.py`.
+The public repository contains the code, model documentation, benchmark data,
+tests, compact source tables, and reproducibility metadata. Version `0.4.0` is
+identified by the tagged GitHub release
+[`v0.4.0`](https://github.com/Adilbaygh/appliedmath-lexflow/releases/tag/v0.4.0).
+The private Uzbek manuscript, licensed journal template, local review files,
+and Mendeley upload workspace remain outside this public repository and outside
+the curated public software archive. When Mendeley assigns the archive DOI, add
+that DOI to the archive metadata and to the article's Data and Code Availability
+Statement; no provisional DOI is recorded here.

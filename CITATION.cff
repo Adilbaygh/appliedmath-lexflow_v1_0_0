@@ -8,3 +8,10 @@ authors:
 version: 0.4.0
 date-released: 2026-08-21
 license: MIT
+repository-code: "https://github.com/Adilbaygh/appliedmath-lexflow"
+url: "https://github.com/Adilbaygh/appliedmath-lexflow"
+keywords:
+  - applied mathematics
+  - lexicographic optimization
+  - network flow
+  - reproducible research

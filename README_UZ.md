@@ -123,27 +123,34 @@ Run and Debug → AppliedMath: Desktop GUI
 
 VS Code interpreter сифатида `my-env\Scripts\python.exe` танланган бўлиши керак.
 
-## Натижа папкалари
+## GitHub’даги очиқ репозиторий таркиби
 
 ```text
-results/tables/                    benchmark’лар ўртасида қиёсловчи жадваллар (table_1..8)
-results/figures/                   benchmark’га боғлиқ бўлмаган назарий расмлар (600 dpi PNG)
-results/figure_data/               шу назарий расмларнинг манба жадваллари
-results/<benchmark_номи>/figures/       ушбу benchmark’нинг ўз расмлари (тармоқ дарахти, профиль,
-                                    матрица нақшлари, оператор мослиги — 600 dpi PNG)
-results/<benchmark_номи>/figure_data/   ушбу benchmark’нинг ўз расмлари учун манба жадваллари
-results/manifests/                 муҳит, версия ва SHA-256 manifest
-results/gui_exports/               GUI орқали экспорт қилинган жорий benchmark жадваллари
+Model/                       математик модель, теоремалар ва исботлар
+Data/benchmarks/             детерминистик rooted-tree benchmark’лар
+Data/synthetic_*.json        scale-текширув учун детерминистик instance
+src/                         Python пакети ва desktop GUI
+tests/                       автоматик математик ва дастурий текширувлар
+results/tables/csv/          Git’да сақланадиган ихчам манба жадваллар (table_1..8)
+results/manifests/           муҳит, версия ва SHA-256 provenance маълумотлари
+.github/workflows/           GitHub Actions автоматик текшируви
 ```
 
-Яъни ҳар бир тармоқ (benchmark)нинг ўз натижалари (`figure_1_tree.png`, `figure_5_profiles.png`,
-`figure_6_matrix.png`, `figure_7_matrix.png`, `figure_4_operator_balance_agreement.png` ва уларнинг
-манба жадваллари) шу тармоқнинг номи билан аталган алоҳида папкада сақланади — мас.
-`results/gone_abat_jap/figures/figure_1_tree.png`.
+Очиқ Git таркибида ихчам CSV манба жадваллари ва provenance маълумотлари
+сақланади. Қуйидаги буйруқ бажарилганда тўлиқ локал натижа дарахти — 600 dpi
+PNG расмлар, figure-source CSV файллар, Excel нусхалар ва ҳар бир benchmark учун
+алоҳида натижа папкалари — қайта яратилади:
 
-**CSV ва Excel:** юқоридаги ҳар бир жадвал-папка (`tables/`, `figure_data/`, шунингдек ҳар бир
-benchmark'нинг ўз `figure_data/`си) ичида жадваллар икки марта, мос номдаги алоҳида папкаларда
-сақланади:
+```powershell
+python main.py analysis
+```
+
+Масалан, шу жараёнда
+`results/gone_abat_jap/figures/figure_1_tree.png` ҳамда бошқа benchmark
+расмлари локал равишда ҳосил қилинади.
+
+**CSV ва Excel:** CSV манба жадвал Git’да сақланади, унга мос Excel нусха эса
+таҳлил буйруғи орқали локал яратилади:
 
 ```text
 results/tables/csv/table_1_closed_form_verification.csv     ← кейинчалик дастурий ишлов бериш учун
@@ -185,8 +192,12 @@ python -m tkinter
 
 ## Мақола ва қўшимча материал
 
-Мақоланинг илмий қайта таҳрирланган ўзбекча ишчи нусхаси
-`paper/appliedmath-manuscript_revised_uz.docx` файлида. Mendeley Data учун
-private manuscript/template’ни чиқариб ташлайдиган metadata ва package builder
-мос равишда `mendeley/` ҳамда `scripts/build_mendeley_package.py` ичида.
-Адабиётлар рўйхати 39 та манбани қамраб олади.
+Очиқ репозиторийда код, математик ҳужжатлар, benchmark маълумотлари, тестлар,
+ихчам натижа жадваллари ва репродуктивлик метамаълумотлари сақланади. `0.4.0`
+версияси GitHub’даги
+[`v0.4.0` release](https://github.com/Adilbaygh/appliedmath-lexflow/releases/tag/v0.4.0)
+билан белгиланади. Мақоланинг ўзбекча ишчи нусхаси, лицензияланган журнал
+шаблони, ички аудит файллари ва Mendeley upload workspace очиқ GitHub
+репозиторийсига ҳамда очиқ дастурий архивга киритилмайди. Mendeley DOI
+берилгандан кейин у архив метамаълумотларига ва мақоланинг Data and Code
+Availability Statement қисмига киритилади; ҳозирча шартли DOI ёзилмайди.
