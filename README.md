@@ -128,7 +128,7 @@ guarantee from every Stage-2 optimum.
 The public repository contains the code, model documentation, benchmark data,
 tests, compact source tables, and reproducibility metadata. Version `0.4.0` is
 identified by the tagged GitHub release
-[`v0.4.0`](https://github.com/Adilbaygh/appliedmath-lexflow/releases/tag/v0.4.0).
+[`v0.4.0`](https://github.com/Adilbaygh/appliedmath-lexflow_v1_0_0/releases/tag/v0.4.0).
 The private Uzbek manuscript, licensed journal template, local review files,
 and Mendeley upload workspace remain outside this public repository and outside
 the curated public software archive. When Mendeley assigns the archive DOI, add

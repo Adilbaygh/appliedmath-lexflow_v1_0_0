@@ -20,9 +20,9 @@ dependencies = [
 ]
 
 [project.urls]
-Repository = "https://github.com/Adilbaygh/appliedmath-lexflow"
-Issues = "https://github.com/Adilbaygh/appliedmath-lexflow/issues"
-Releases = "https://github.com/Adilbaygh/appliedmath-lexflow/releases"
+Repository = "https://github.com/Adilbaygh/appliedmath-lexflow_v1_0_0"
+Issues = "https://github.com/Adilbaygh/appliedmath-lexflow_v1_0_0/issues"
+Releases = "https://github.com/Adilbaygh/appliedmath-lexflow_v1_0_0/releases"
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0", "ruff>=0.9"]

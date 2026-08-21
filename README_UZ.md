@@ -195,7 +195,7 @@ python -m tkinter
 Очиқ репозиторийда код, математик ҳужжатлар, benchmark маълумотлари, тестлар,
 ихчам натижа жадваллари ва репродуктивлик метамаълумотлари сақланади. `0.4.0`
 версияси GitHub’даги
-[`v0.4.0` release](https://github.com/Adilbaygh/appliedmath-lexflow/releases/tag/v0.4.0)
+[`v0.4.0` release](https://github.com/Adilbaygh/appliedmath-lexflow_v1_0_0/releases/tag/v0.4.0)
 билан белгиланади. Мақоланинг ўзбекча ишчи нусхаси, лицензияланган журнал
 шаблони, ички аудит файллари ва Mendeley upload workspace очиқ GitHub
 репозиторийсига ҳамда очиқ дастурий архивга киритилмайди. Mendeley DOI
