@@ -12,12 +12,14 @@ pivoting:
 
 * ``stage2_variation_bounds`` -- the range ``[Omega_min, Omega_max]`` of the
   temporal variation over the *entire* Stage-2 optimal face. ``Omega_min`` is
-  the value Stage 3 attains; ``Omega_max`` is the worst any solver could report.
-  The guaranteed Stage-3 improvement is ``(Omega_max - Omega_min) / Omega_max``.
+  the value Stage 3 attains; ``Omega_max`` is the largest variation on that
+  face.  The ratio ``(Omega_max - Omega_min) / Omega_max`` is a worst-to-best
+  range reduction, not a guaranteed reduction from an arbitrary Stage-2 point.
 * ``price_of_fairness`` -- how much total net delivery the Stage-1 max-min
   guarantee costs relative to the pure-efficiency optimum.
 * ``solve_leximin`` -- the full lexicographic max-min (leximin) allocation by
-  progressive filling; unlike Stage 1 it is a single, solver-independent vector.
+  exact progressive filling; unlike Stage 1 it is a single,
+  solver-independent vector on the model's convex packing set.
 
 Every routine here uses only physical capacities, demands, efficiencies and the
 exact Stage-1 floor, so its output is reproducible across solvers.
@@ -49,10 +51,15 @@ def _rationalize(value: float, max_den: int = 10**6, tol: float = 1e-7) -> Fract
 class VariationBounds:
     omega_min: float
     omega_max: float
-    reduction_fraction: float          # (omega_max - omega_min) / omega_max
+    worst_to_best_reduction_fraction: float
     omega_min_exact: Fraction | None
     omega_max_exact: Fraction | None
     enumerated_pairs: int
+
+    @property
+    def reduction_fraction(self) -> float:
+        """Backward-compatible alias for the old, misleading field name."""
+        return self.worst_to_best_reduction_fraction
 
 
 def stage2_optimum(model: Benchmark) -> tuple[float, np.ndarray, np.ndarray, tuple]:
@@ -74,11 +81,12 @@ def stage2_variation_bounds(
 ) -> VariationBounds | None:
     """Extremes of temporal variation over the exact Stage-2 optimal face.
 
-    ``Omega = sum |r_right - r_left|`` is convex, so both its minimum and maximum
-    over the polytope ``{physical caps, weighted @ r == W*, r in [lambda*, 1]}``
-    are attained at vertices. We obtain ``Omega_max`` by maximising every signed
-    linearisation ``sum s_i (r_right - r_left)`` (``s in {+1,-1}^p``) and taking
-    the best; ``Omega_min`` by the standard z-linearisation. Returns ``None``
+    ``Omega = sum |r_right - r_left|`` is convex. Its maximum over the compact
+    Stage-2 polytope is attained at at least one vertex; its minimum need not be
+    a vertex in the original ratio space. We obtain ``Omega_max`` by maximising
+    every signed linearisation ``sum s_i (r_right - r_left)``
+    (``s in {+1,-1}^p``) and taking the best; ``Omega_min`` by the standard
+    z-linearisation. Returns ``None``
     (with no silent guess) when the number of consecutive-active pairs ``p``
     exceeds ``max_pairs`` and the 2**p enumeration would be too large.
     """
@@ -143,37 +151,35 @@ def stage2_variation_bounds(
 
 @dataclass(frozen=True, slots=True)
 class PriceOfFairness:
-    efficiency_optimum: float          # Z_eff: max total net delivery, no floor
-    fair_delivery: float               # Z_fair: total net delivery under the floor
+    efficiency_optimum: float          # Z_eff^w: max weighted delivery, no floor
+    fair_delivery: float               # Z_fair^w: weighted delivery under the floor
     price_of_fairness: float           # 1 - Z_fair / Z_eff
 
 
 def price_of_fairness(model: Benchmark) -> PriceOfFairness:
-    """Total-delivery cost of the Stage-1 max-min guarantee.
+    """Weighted-delivery cost of the Stage-1 max-min guarantee.
 
-    ``Z_eff`` maximises unweighted net delivery ``sum d_kf r_kf`` with the
-    physical capacities but *no* fairness floor (``r in [0, 1]``); ``Z_fair`` is
-    the same total under the Stage-1 floor and Stage-2 weighting. The price of
-    fairness ``1 - Z_fair/Z_eff`` is what equity costs in throughput.
+    ``Z_eff^w`` maximises ``sum w_f d_kf r_kf`` with the physical capacities but
+    *no* fairness floor (``r in [0, 1]``); ``Z_fair^w`` maximises the same
+    objective under the Stage-1 floor.  Using the same weights in both problems
+    is essential: otherwise the quotient compares different objectives.
     """
     physical_a, physical_b, records = physical_matrices(model)
-    demand = np.asarray(
-        [float(model.demand[k][f]) for (k, f) in records], dtype=float
-    )
+    weighted = weighted_coefficients(model, records)
     lam = float(solve_stage1_closed_form(model).lambda_star)
 
     res_eff = linprog(
-        -demand, A_ub=physical_a, b_ub=physical_b,
+        -weighted, A_ub=physical_a, b_ub=physical_b,
         bounds=[(0.0, 1.0)] * len(records), method="highs", options=_HIGHS,
     )
     res_fair = linprog(
-        -demand, A_ub=physical_a, b_ub=physical_b,
+        -weighted, A_ub=physical_a, b_ub=physical_b,
         bounds=[(lam, 1.0)] * len(records), method="highs", options=_HIGHS,
     )
     if not (res_eff.success and res_fair.success):
         raise RuntimeError("Price-of-fairness LP failed.")
-    z_eff = float(demand @ res_eff.x)
-    z_fair = float(demand @ res_fair.x)
+    z_eff = float(weighted @ res_eff.x)
+    z_fair = float(weighted @ res_fair.x)
     pof = 1.0 - z_fair / z_eff if z_eff > 0 else 0.0
     return PriceOfFairness(z_eff, z_fair, pof)
 
@@ -189,113 +195,107 @@ class LeximinSolution:
 
 def solve_leximin(
     model: Benchmark,
-    feasibility_tolerance: float = 1e-7,
-    slack: float = 1e-7,
     max_records: int | None = 64,
 ) -> LeximinSolution:
-    """Full lexicographic max-min (leximin) allocation by progressive filling.
+    """Return the exact progressive-filling leximin allocation.
 
-    Stage 1 only maximises the *single* smallest service ratio, so its optimal
-    r-vector is non-unique. Leximin instead maximises the smallest ratio, then
-    the second smallest, and so on: it repeatedly applies the Stage-1 max-min LP
-    to the residual system, freezing at each round the records that cannot be
-    raised further. The result is a UNIQUE vector -- removing the degeneracy that
-    makes Stage 2/3 solver-dependent -- and needs no subjective weights ``w_f``.
+    The physical feasible set is a downward-closed packing polytope ``H r <= c``
+    with ``H >= 0``.  At every round all unfrozen coordinates can therefore be
+    raised to the common exact level
 
-    Numerical robustness: when a capacity is exactly binding the max-min ``level``
-    returned by the solver can sit an ``ulp`` above the true value; requiring the
-    remaining free records to reach *exactly* that level against a saturated
-    capacity is then reported as infeasible. Both the freeze test and the freeze
-    threshold therefore use a small ``slack`` (and HiGHS' default feasibility
-    tolerance rather than an over-tight one). ``max_records`` guards the cost:
-    progressive filling runs O(records) LPs per round, so it is refused (with a
-    clear error) on benchmarks far larger than the exact article examples; the
-    caller decides what to report for those.
+    ``min_j (c_j - sum_fixed h_ji r_i) / sum_free h_ji``.
+
+    Every free coordinate using a resource that attains this minimum is blocked
+    and is frozen at that level.  The calculation uses :class:`Fraction`
+    throughout, so it needs neither repeated LP freeze tests nor numerical
+    slack.  Convexity of the packing set makes the resulting leximin vector
+    unique. ``max_records`` remains only as an optional caller-controlled guard.
     """
-    physical_a, physical_b, records = physical_matrices(model)
+    from .operators import build_operator_exact
+
+    records = model.active_records
     n = len(records)
     if max_records is not None and n > max_records:
         raise ValueError(
             f"Leximin refused: {n} active records exceeds max_records={max_records}. "
-            "Progressive filling is intended for the small exact benchmarks; "
-            "raise max_records explicitly to force it."
+            "Raise max_records explicitly to compute it."
         )
-    index = {rec: i for i, rec in enumerate(records)}
-    fixed: dict[int, float] = {}
-    levels: list[float] = []
+    index = {record: idx for idx, record in enumerate(records)}
+    a_coeff, b_coeff = build_operator_exact(model)
+    rows: list[tuple[Fraction, dict[int, Fraction]]] = []
+    for period in model.periods:
+        source_row = {
+            index[(period, user.user_id)]: (
+                b_coeff[(period, user.user_id)]
+                * model.demand[period][user.user_id]
+            )
+            for user in model.users
+            if (period, user.user_id) in index
+        }
+        rows.append((model.source_capacity[period], source_row))
+        for edge_id in model.edge_ids:
+            edge_row = {
+                index[(period, user.user_id)]: (
+                    a_coeff[(period, edge_id, user.user_id)]
+                    * model.demand[period][user.user_id]
+                )
+                for user in model.users
+                if (period, user.user_id) in index
+                and a_coeff[(period, edge_id, user.user_id)] > 0
+            }
+            rows.append((model.edge_capacity[period][edge_id], edge_row))
 
-    def solve_maxmin(free: list[int]) -> float:
-        # maximise lambda s.t. caps, r_free >= lambda, fixed columns substituted.
-        cols = n + 1  # r variables + lambda
-        a_ub = np.zeros((physical_a.shape[0] + len(free), cols))
-        b_ub = np.zeros(physical_a.shape[0] + len(free))
-        a_ub[: physical_a.shape[0], :n] = physical_a
-        b_ub[: physical_a.shape[0]] = physical_b
-        for r, j in enumerate(free):
-            a_ub[physical_a.shape[0] + r, j] = -1.0
-            a_ub[physical_a.shape[0] + r, n] = 1.0
-        bounds = []
-        for j in range(n):
-            bounds.append((fixed[j], fixed[j]) if j in fixed else (0.0, 1.0))
-        bounds.append((0.0, 1.0))
-        obj = np.zeros(cols); obj[n] = -1.0
-        res = linprog(
-            obj, A_ub=a_ub, b_ub=b_ub, bounds=bounds, method="highs",
-            options={"primal_feasibility_tolerance": feasibility_tolerance,
-                     "dual_feasibility_tolerance": feasibility_tolerance},
-        )
-        if not res.success:
-            raise RuntimeError(f"Leximin max-min round failed: {res.message}")
-        return float(res.x[n])
-
-    def max_single(target: int, free: list[int], level: float) -> float:
-        # maximise r_target s.t. caps, all free >= level, fixed substituted.
-        a_ub = np.zeros((physical_a.shape[0] + len(free), n))
-        b_ub = np.zeros(physical_a.shape[0] + len(free))
-        a_ub[: physical_a.shape[0], :] = physical_a
-        b_ub[: physical_a.shape[0]] = physical_b
-        for r, j in enumerate(free):
-            a_ub[physical_a.shape[0] + r, j] = -1.0
-            # r_j >= level - slack: a hair of slack so a level that saturates a
-            # capacity (returned an ulp high) does not make the LP infeasible.
-            b_ub[physical_a.shape[0] + r] = -(level - slack)
-        bounds = [(fixed[j], fixed[j]) if j in fixed else (0.0, 1.0) for j in range(n)]
-        obj = np.zeros(n); obj[target] = -1.0
-        res = linprog(obj, A_ub=a_ub, b_ub=b_ub, bounds=bounds, method="highs",
-                      options={"primal_feasibility_tolerance": feasibility_tolerance,
-                               "dual_feasibility_tolerance": feasibility_tolerance})
-        if not res.success:
-            raise RuntimeError(f"Leximin freeze test failed: {res.message}")
-        return float(res.x[target])
-
-    free = list(range(n))
-    guard = 0
+    fixed: dict[int, Fraction] = {}
+    free = set(range(n))
+    levels_exact: list[Fraction] = []
     while free:
-        guard += 1
-        if guard > n + 2:
-            raise RuntimeError("Leximin did not converge; check the model.")
-        level = solve_maxmin(free)
-        levels.append(level)
-        # A record is blocked at this level when it cannot be raised beyond it
-        # (within slack) without violating a capacity or lowering another free
-        # record below the level.
-        newly_frozen = [j for j in free if max_single(j, free, level) <= level + 2 * slack]
-        if not newly_frozen:  # numerical safety: freeze the tightest record
-            newly_frozen = [min(free, key=lambda j: max_single(j, free, level))]
-        for j in newly_frozen:
-            fixed[j] = level
-        free = [j for j in free if j not in fixed]
+        candidates: list[tuple[Fraction, dict[int, Fraction]]] = []
+        for capacity, coefficients in rows:
+            denominator = sum(
+                (coefficients.get(idx, Fraction(0)) for idx in free),
+                Fraction(0),
+            )
+            if denominator <= 0:
+                continue
+            used_by_fixed = sum(
+                (
+                    coefficients.get(idx, Fraction(0)) * value
+                    for idx, value in fixed.items()
+                ),
+                Fraction(0),
+            )
+            candidates.append(((capacity - used_by_fixed) / denominator, coefficients))
 
-    ratios = {rec: fixed[index[rec]] for rec in records}
+        level = min(
+            [Fraction(1)] + [candidate for candidate, _ in candidates]
+        )
+        if levels_exact and level < levels_exact[-1]:
+            raise RuntimeError("Leximin level decreased; the packing model is inconsistent.")
+        if not (Fraction(0) <= level <= Fraction(1)):
+            raise RuntimeError("Leximin level lies outside [0, 1].")
+        levels_exact.append(level)
 
-    # Collapse consecutive near-equal freeze levels into the distinct leximin
-    # levels (a saturated level can take a couple of rounds to drain under the
-    # numerical slack, producing e.g. [0.6, 0.6, 0.8, 0.8]).
-    distinct_levels: list[float] = []
-    for value in levels:
-        if not distinct_levels or abs(value - distinct_levels[-1]) > 1e-6:
-            distinct_levels.append(value)
-    levels = distinct_levels
+        if level == 1:
+            newly_frozen = set(free)
+        else:
+            binding_rows = [
+                coefficients
+                for candidate, coefficients in candidates
+                if candidate == level
+            ]
+            newly_frozen = {
+                idx
+                for idx in free
+                if any(coefficients.get(idx, Fraction(0)) > 0 for coefficients in binding_rows)
+            }
+        if not newly_frozen:
+            raise RuntimeError("Leximin progressive filling found no blocked record.")
+        for idx in newly_frozen:
+            fixed[idx] = level
+        free.difference_update(newly_frozen)
+
+    ratios = {rec: float(fixed[index[rec]]) for rec in records}
+    levels = [float(value) for value in levels_exact]
 
     weights = model.weight_by_user
     num = den = 0.0

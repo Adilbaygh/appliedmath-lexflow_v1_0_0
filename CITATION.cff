@@ -3,9 +3,8 @@ message: "Please cite the associated AppliedMath article and this software relea
 title: "AppliedMath LexFlow: Deterministic Lexicographic Flow Allocation on Lossy Capacitated Trees"
 type: software
 authors:
-  - family-names: Qudaybergenov
+  - family-names: Kudaybergenov
     given-names: Adilbay
-version: 0.3.0
-date-released: 2026-08-16
+version: 0.4.0
+date-released: 2026-08-21
 license: MIT
-repository-code: "https://github.com/OWNER/appliedmath-lexflow"

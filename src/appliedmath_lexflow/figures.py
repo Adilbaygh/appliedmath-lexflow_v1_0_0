@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from fractions import Fraction
 from pathlib import Path
-from typing import Iterable
 
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -19,7 +19,6 @@ from .operators import (
     matrix_operator,
 )
 from .tables import write_table
-
 
 SINGLE_COLUMN = (3.5, 2.6)
 DOUBLE_COLUMN = (7.2, 4.3)

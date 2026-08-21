@@ -1,3 +1,0 @@
-benchmark,period,edge,operator_flow,node_balance_flow,exact_difference
-tie_bottleneck,k1,e1,30.0,30.0,0
-tie_bottleneck,k1,e2,45.0,45.0,0

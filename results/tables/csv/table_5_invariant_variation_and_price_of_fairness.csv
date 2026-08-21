@@ -1,4 +1,4 @@
-benchmark,omega_min,omega_min_exact,omega_max,omega_max_exact,invariant_reduction_fraction,efficiency_optimum_Z_eff,fair_delivery_Z_fair,price_of_fairness
+benchmark,omega_min,omega_min_exact,omega_max,omega_max_exact,worst_to_best_reduction_fraction,weighted_efficiency_optimum_Z_eff_w,weighted_fair_delivery_Z_fair_w,price_of_fairness
 branching_shared_edge_bottleneck,0.0,0,0.0,0,0.0,75.05,74.15306122448979,0.011951216196005476
 chain_source_bottleneck,0.0,0,0.0,0,0.0,72.0,72.0,0.0
 gone_abat_jap,,,,,,6119889.1044131685,5918844.757203277,0.0328509787971345

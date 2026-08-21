@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from fractions import Fraction
-from typing import Mapping
+from itertools import pairwise
 
 import networkx as nx
 import numpy as np
 
-from .domain import Benchmark, Edge
+from .domain import Benchmark
 
 
 def build_graph(model: Benchmark) -> nx.DiGraph:
@@ -24,7 +25,7 @@ def user_paths(model: Benchmark) -> dict[str, tuple[str, ...]]:
     for user in model.users:
         nodes = nx.shortest_path(graph, model.source, user.terminal)
         paths[user.user_id] = tuple(
-            edge_lookup[(tail, head)] for tail, head in zip(nodes[:-1], nodes[1:])
+            edge_lookup[(tail, head)] for tail, head in pairwise(nodes)
         )
     return paths
 

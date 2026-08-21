@@ -1,5 +1,19 @@
 # Model development log
 
+## v0.4.0
+
+- Stage-2 variation reporting was corrected: $61.9\%$ is now labelled the
+  worst-to-best range reduction, while the current $0.75\to0.40$ vertex change
+  is reported as the solver-specific $46.7\%$ observation;
+- the price-of-fairness pair now uses the same service weights in both LPs;
+- leximin computation was replaced by exact rational progressive filling for
+  the nonnegative packing model;
+- the five deterministic scale instances are generated and verified by a
+  path-sparse HiGHS formulation, eliminating the stale $0.72$ table;
+- input validation now enforces a nonempty active-record set and leaf terminals;
+- verification manifests now contain computed, two-sided preservation gates
+  instead of hard-coded pass flags.
+
 ## v0.3.0
 
 - мақола ва модель мустақил тадқиқот сифатида қайта позицияланди;

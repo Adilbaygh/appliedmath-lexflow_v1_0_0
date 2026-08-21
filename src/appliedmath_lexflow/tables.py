@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import re
 import zipfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pandas as pd
@@ -22,7 +22,7 @@ import pandas as pd
 # pipeline produce byte-different .xlsx files. _freeze_xlsx() rewrites the
 # just-saved archive so every entry and the modified timestamp are pinned,
 # matching the deterministic PNG metadata used elsewhere in this project.
-_FIXED_EXCEL_DATE = datetime(2000, 1, 1, tzinfo=timezone.utc)
+_FIXED_EXCEL_DATE = datetime(2000, 1, 1, tzinfo=UTC)
 _FIXED_ZIP_DATE_TIME = (2000, 1, 1, 0, 0, 0)
 _SOFTWARE_LABEL = "AppliedMath LexFlow"
 _MODIFIED_PATTERN = re.compile(
@@ -46,9 +46,14 @@ def _freeze_xlsx(path: Path) -> None:
         info.create_system = 0  # normalize DOS vs. Unix zip metadata across OSes
         frozen.append((info, data))
 
-    with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as target:
+    # Rebuild beside the workbook and atomically replace it. Reopening the same
+    # path for truncating writes can intermittently fail on Windows immediately
+    # after openpyxl closes the file (for example while an indexer scans it).
+    temporary = path.with_name(f".{path.name}.freeze-tmp")
+    with zipfile.ZipFile(temporary, "w", zipfile.ZIP_DEFLATED) as target:
         for info, data in frozen:
             target.writestr(info, data)
+    temporary.replace(path)
 
 
 def write_table(

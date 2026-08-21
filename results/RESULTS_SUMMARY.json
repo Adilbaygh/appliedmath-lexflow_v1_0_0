@@ -6,10 +6,21 @@
   "max_stage3_physical_violation": 1.1641532182693481e-10,
   "temporal_omega_min": 0.40000000000000047,
   "temporal_omega_max": 1.05,
-  "temporal_variation_reduction_fraction_invariant": 0.6190476190476186,
+  "temporal_worst_to_best_reduction_fraction": 0.6190476190476186,
   "temporal_stage2_variation_solver_vertex": 0.75,
   "temporal_stage3_variation": 0.40000000000000113,
-  "temporal_leximin_variation": 0.40000000000000024,
+  "temporal_leximin_variation": 0.40000000000000013,
+  "scale_closed_form_max_difference": 2.220446049250313e-16,
+  "verification_gates": {
+    "closed_form_lp_agreement": true,
+    "scale_closed_form_lp_agreement": true,
+    "operator_balance_exact": true,
+    "node_balance_exact": true,
+    "stage3_physical_feasibility": true,
+    "stage3_floor_preserved": true,
+    "stage3_satisfaction_preserved": true,
+    "stage3_variation_not_increased": true
+  },
   "verification_status": "PASS",
   "manifest": "results/manifests/run_manifest.json",
   "figure_warnings": []

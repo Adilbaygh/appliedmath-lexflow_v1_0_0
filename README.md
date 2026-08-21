@@ -14,7 +14,11 @@ The study covers:
 4. a deterministic three-stage lexicographic selection rule;
 5. exact rational verification and reproducible publication assets.
 
-The small synthetic benchmarks are designed to isolate mathematical properties. They do not constitute field calibration, historical validation, or a claim about operational performance in a particular irrigation system.
+The five small synthetic benchmarks are designed to isolate mathematical
+properties. The Gone Abat Jap instance is a deterministic controlled-scenario
+adaptation of openly cited input data. Neither component constitutes field
+calibration, historical scarcity validation, or a claim about operational
+performance in a particular irrigation system.
 
 ## Installation
 
@@ -56,13 +60,19 @@ appliedmath-lexflow-analysis
 
 ## Desktop GUI
 
-The Tk/ttk desktop application uses the same solver and verification functions as the command-line and reporting pipelines. It provides benchmark selection, Stage 1/2/3 metrics, allocation tables and temporal profiles, network topology, verification gates, CSV export, automated tests, article-output generation, and a browser for generated result files.
+The bilingual Uzbek/English Tk/ttk desktop application uses the same solver and
+verification functions as the command-line and reporting pipelines. Select
+**Language / Тил** or press `Ctrl+L` to switch languages without changing the
+solver snapshot. It provides benchmark selection, Stage 1/2/3 metrics,
+allocation tables and temporal profiles, network topology, verification gates,
+CSV/Excel export, automated tests, article-output generation, and a browser for
+generated result files.
 
 ## Repository layout
 
 ```text
 Model/                       mathematical specification, theorems, and proofs
-Paper/                       AppliedMath template, manuscript, bibliography, and supplement
+paper/                       private working manuscript files (excluded from public data package)
 Data/benchmarks/             deterministic rooted-tree benchmark instances
 src/                         Python package and desktop application
 results/tables/               cross-benchmark comparison tables for the Results section
@@ -99,8 +109,24 @@ Run the tests:
 python -m pytest -p no:cacheprovider
 ```
 
-The current release passes seven automated tests. Across five deterministic benchmarks, the maximum closed-form/LP difference is approximately `1.11e-16`; exact operator–balance and node-balance residuals are zero. In the temporal benchmark, Stage 3 reduces total ratio variation from `0.75` to approximately `0.40` while preserving the Stage-1 minimum ratio `0.60` and Stage-2 weighted satisfaction within numerical tolerance.
+The current release passes 22 automated tests. Across six deterministic
+benchmarks, the maximum closed-form/LP difference is approximately `1.11e-16`;
+exact operator–balance and node-balance residuals are zero. All five generated
+scale instances (up to 500 users, 1022 edges, four periods, and 2000 active
+records) have the exact Stage-1 value `0.60`, and the sparse HiGHS LP agrees to
+floating-point precision. In the temporal benchmark, the Stage-2 optimal face
+has variation range `[0.40, 1.05]`; Stage 3 returns the invariant minimum
+`0.40`. The current HiGHS vertex has variation `0.75`, so its observed reduction
+is `46.7%`; the `61.9%` value is only the worst-to-best range reduction, not a
+guarantee from every Stage-2 optimum.
 
 ## Public software release
 
-The public repository should contain the code, model documentation, benchmark data, tests, source tables, and reproducibility metadata. The private Uzbek manuscript and licensed journal template should remain outside the public software release. Before publication, update `CITATION.cff`, create a tagged release, archive it with a persistent DOI, and cite that release in the Data and Code Availability Statement.
+The public repository should contain the code, model documentation, benchmark
+data, tests, source tables, and reproducibility metadata. The private Uzbek
+manuscript and licensed journal template remain outside the curated Mendeley
+package. Before publication, add the real tagged repository URL to
+`CITATION.cff`, decide whether the new archive is Version 2 of the existing Gone
+Abat Jap dataset or a distinct related dataset, and cite the assigned DOI in the
+Data and Code Availability Statement. The local upload metadata and package
+builder are under `mendeley/` and `scripts/build_mendeley_package.py`.

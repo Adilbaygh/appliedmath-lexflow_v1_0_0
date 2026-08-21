@@ -20,30 +20,30 @@ def build_parser() -> argparse.ArgumentParser:
     )
     subparsers = parser.add_subparsers(dest="command")
 
-    subparsers.add_parser("gui", help="Desktop GUI'ни ишга тушириш.")
+    subparsers.add_parser("gui", help="Launch the bilingual desktop GUI.")
 
     demo_parser = subparsers.add_parser(
-        "demo", help="Битта benchmark'ни терминалда босқичма-босқич ечиш."
+        "demo", help="Solve one benchmark stage by stage in the terminal."
     )
     demo_parser.add_argument(
         "--benchmark",
         default="temporal_lexicographic",
-        help="Benchmark номи.",
+        help="Benchmark name.",
     )
 
     subparsers.add_parser(
-        "analysis", help="Мақола учун барча жадвал ва расмларни яратиш."
+        "analysis", help="Generate all tables and figures for the article."
     )
 
     save_result_parser = subparsers.add_parser(
         "save-result",
-        help="Битта benchmark файлининг натижаларини берилган папкага сақлаш.",
+        help="Save a complete result package for one benchmark file.",
     )
     save_result_parser.add_argument(
-        "--benchmark-path", required=True, help="Benchmark JSON файлининг йўли."
+        "--benchmark-path", required=True, help="Path to the benchmark JSON file."
     )
     save_result_parser.add_argument(
-        "--output-dir", required=True, help="Натижалар сақланадиган папка."
+        "--output-dir", required=True, help="Folder in which to save the results."
     )
     return parser
 

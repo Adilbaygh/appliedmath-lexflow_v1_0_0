@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import os
-from pathlib import Path
 import queue
 import subprocess
 import sys
 import threading
 import traceback
-from typing import Callable, TypeVar
+from collections.abc import Callable
+from pathlib import Path
+from typing import TypeVar
 
 import networkx as nx
 import numpy as np
@@ -27,14 +28,14 @@ from matplotlib.figure import Figure
 
 from .desktop_backend import (
     BenchmarkSnapshot,
-    benchmark_description_uz,
+    benchmark_description,
     export_snapshot,
     find_project_root,
-    generate_article_results,
     fraction_string,
+    generate_article_results,
     period_series,
     ratio_rows,
-    resource_label_uz,
+    resource_label,
     result_files,
     run_tests,
     save_benchmark_result,
@@ -43,6 +44,7 @@ from .desktop_backend import (
     users_with_activity,
     verification_rows,
 )
+from .i18n import LANGUAGE_NAMES, SUPPORTED_LANGUAGES, tr
 from .operators import build_graph
 
 T = TypeVar("T")
@@ -73,8 +75,11 @@ class LexFlowDesktopApp:
         self._busy = False
         self._task_queue: queue.Queue[tuple[str, object]] = queue.Queue()
         self._buttons: list[ttk.Button] = []
+        self._log_entries: list[str] = []
+        self.language = "uz"
+        self.language_var = tk.StringVar(value=self.language)
 
-        self.root.title("AppliedMath — детерминистик лексикографик оқим модели")
+        self.root.title(self._t("window_title"))
         self.root.geometry("1320x840")
         self.root.minsize(1080, 700)
         self._center_window()
@@ -85,13 +90,13 @@ class LexFlowDesktopApp:
         self.root.bind("<Control-g>", lambda _event: self.save_current_benchmark_result())
         self.root.bind("<Control-G>", lambda _event: self.save_current_benchmark_result())
         self.root.bind("<Control-Shift-G>", lambda _event: self.generate_article_outputs())
+        self.root.bind("<Control-l>", lambda _event: self._toggle_language())
+        self.root.bind("<Control-L>", lambda _event: self._toggle_language())
 
-        self.status_var = tk.StringVar(value="Тайёр")
-        self.benchmark_name_var = tk.StringVar(value="тармоқ танланмади")
+        self.status_var = tk.StringVar(value=self._t("ready"))
+        self.benchmark_name_var = tk.StringVar(value=self._t("no_network"))
         self.user_var = tk.StringVar()
-        self.description_var = tk.StringVar(
-            value="Файл > Тармоқ очиш орқали Data/benchmarks папкасидаги .json файлни танланг."
-        )
+        self.description_var = tk.StringVar(value=self._t("choose_hint"))
 
         self._build_menu()
         self._build_header()
@@ -100,8 +105,40 @@ class LexFlowDesktopApp:
         self._build_statusbar()
         self._refresh_result_files()
 
-        self._log(f"Лойиҳа папкаси: {self.project_root}")
-        self._log("Модель чегараси: фақат детерминистик rooted-tree benchmark’лар.")
+        self._log(self._t("project_log", path=self.project_root))
+        self._log(self._t("boundary_log"))
+
+    def _t(self, key: str, **values: object) -> str:
+        return tr(key, self.language, **values)
+
+    def _toggle_language(self) -> None:
+        self._switch_language("en" if self.language == "uz" else "uz")
+
+    def _switch_language(self, language: str) -> None:
+        if language == self.language:
+            return
+        if self._busy:
+            self.language_var.set(self.language)
+            self.status_var.set(self._t("busy"))
+            return
+        self.language = language
+        self.language_var.set(language)
+        self.root.title(self._t("window_title"))
+        for child in self.root.winfo_children():
+            child.destroy()
+        self._buttons.clear()
+        self.status_var.set(self._t("ready"))
+        self.description_var.set(self._t("choose_hint"))
+        if self.snapshot is None:
+            self.benchmark_name_var.set(self._t("no_network"))
+        self._build_menu()
+        self._build_header()
+        self._build_controls()
+        self._build_notebook()
+        self._build_statusbar()
+        self._refresh_result_files()
+        if self.snapshot is not None:
+            self._display_snapshot(self.snapshot, log_result=False)
 
     def _center_window(self) -> None:
         self.root.update_idletasks()
@@ -132,29 +169,39 @@ class LexFlowDesktopApp:
     def _build_menu(self) -> None:
         menu = tk.Menu(self.root)
         file_menu = tk.Menu(menu, tearoff=False)
-        file_menu.add_command(label="Тармоқ очиш", command=self.open_benchmark_file)
+        file_menu.add_command(label=self._t("menu_open"), command=self.open_benchmark_file)
         file_menu.add_separator()
-        file_menu.add_command(label="Тармоқни қайта ечиш (F5)", command=self.run_selected_benchmark)
-        file_menu.add_command(label="Натижани сақлаш… (Ctrl+G)", command=self.save_current_benchmark_result)
+        file_menu.add_command(label=self._t("menu_resolve"), command=self.run_selected_benchmark)
+        file_menu.add_command(label=self._t("menu_save"), command=self.save_current_benchmark_result)
         file_menu.add_separator()
         # Everything below is independent of whatever benchmark (if any) is
         # currently open in the GUI — it works even with nothing loaded.
         file_menu.add_command(
-            label="Барча Data/benchmarks натижаларини қайта ҳисоблаш (Ctrl+Shift+G)",
+            label=self._t("menu_generate"),
             command=self.generate_article_outputs,
         )
-        file_menu.add_command(label="Автоматик тестларни ишга тушириш", command=self.run_test_suite)
+        file_menu.add_command(label=self._t("menu_tests"), command=self.run_test_suite)
         file_menu.add_separator()
-        file_menu.add_command(label="Натижалар папкасини очиш", command=lambda: self._open_path(self.project_root / "results"))
-        file_menu.add_command(label="Лойиҳа папкасини очиш", command=lambda: self._open_path(self.project_root))
+        file_menu.add_command(label=self._t("menu_results"), command=lambda: self._open_path(self.project_root / "results"))
+        file_menu.add_command(label=self._t("menu_project"), command=lambda: self._open_path(self.project_root))
         file_menu.add_separator()
-        file_menu.add_command(label="Чиқиш", command=self.root.destroy)
-        menu.add_cascade(label="Файл", menu=file_menu)
+        file_menu.add_command(label=self._t("menu_exit"), command=self.root.destroy)
+        menu.add_cascade(label=self._t("menu_file"), menu=file_menu)
+
+        language_menu = tk.Menu(menu, tearoff=False)
+        for language in SUPPORTED_LANGUAGES:
+            language_menu.add_radiobutton(
+                label=LANGUAGE_NAMES[language],
+                variable=self.language_var,
+                value=language,
+                command=lambda selected=language: self._switch_language(selected),
+            )
+        menu.add_cascade(label=self._t("menu_language"), menu=language_menu)
 
         help_menu = tk.Menu(menu, tearoff=False)
-        help_menu.add_command(label="Модель чегараси", command=self._show_boundary)
-        help_menu.add_command(label="Дастур ҳақида", command=self._show_about)
-        menu.add_cascade(label="Ёрдам", menu=help_menu)
+        help_menu.add_command(label=self._t("menu_boundary"), command=self._show_boundary)
+        help_menu.add_command(label=self._t("menu_about"), command=self._show_about)
+        menu.add_cascade(label=self._t("menu_help"), menu=help_menu)
         self.root.configure(menu=menu)
 
     def _build_header(self) -> None:
@@ -162,15 +209,12 @@ class LexFlowDesktopApp:
         frame.pack(fill="x")
         ttk.Label(
             frame,
-            text="AppliedMath: уч босқичли детерминистик лексикографик оқим модели",
+            text=self._t("header_title"),
             style="Title.TLabel",
         ).pack(anchor="w")
         ttk.Label(
             frame,
-            text=(
-                "1-босқичнинг ёпиқ ечими, граф оператори — тугун баланси "
-                "эквивалентлиги ва 1-, 2- ва 3-босқичларнинг сонли верификацияси"
-            ),
+            text=self._t("header_subtitle"),
             style="Subtitle.TLabel",
         ).pack(anchor="w", pady=(3, 0))
 
@@ -182,18 +226,18 @@ class LexFlowDesktopApp:
     def _build_controls(self) -> None:
         controls = ttk.Frame(self.root, padding=(18, 6, 18, 10))
         controls.pack(fill="x")
-        ttk.Label(controls, text="Назорат мисоли:", style="Section.TLabel").pack(side="left")
-        self._button(controls, "Очиш…", self.open_benchmark_file).pack(side="left", padx=(8, 8))
+        ttk.Label(controls, text=self._t("benchmark"), style="Section.TLabel").pack(side="left")
+        self._button(controls, self._t("open"), self.open_benchmark_file).pack(side="left", padx=(8, 8))
         ttk.Label(
             controls, textvariable=self.benchmark_name_var, style="Section.TLabel"
         ).pack(side="left", padx=(0, 12))
 
-        self._button(controls, "Ечиш", self.run_selected_benchmark).pack(side="left", padx=4)
-        self._button(controls, "Натижани сақлаш…", self.save_current_benchmark_result).pack(side="left", padx=4)
-        self._button(controls, "Барчасини қайта ҳисоблаш", self.generate_article_outputs).pack(side="left", padx=4)
-        self._button(controls, "Тестлар", self.run_test_suite).pack(side="left", padx=4)
-        self._button(controls, "CSV/Excel экспорт", self.export_current).pack(side="left", padx=4)
-        self._button(controls, "Натижалар папкаси", lambda: self._open_path(self.project_root / "results")).pack(side="right", padx=4)
+        self._button(controls, self._t("solve"), self.run_selected_benchmark).pack(side="left", padx=4)
+        self._button(controls, self._t("save_result"), self.save_current_benchmark_result).pack(side="left", padx=4)
+        self._button(controls, self._t("regenerate_all"), self.generate_article_outputs).pack(side="left", padx=4)
+        self._button(controls, self._t("tests"), self.run_test_suite).pack(side="left", padx=4)
+        self._button(controls, self._t("export"), self.export_current).pack(side="left", padx=4)
+        self._button(controls, self._t("results_folder"), lambda: self._open_path(self.project_root / "results")).pack(side="right", padx=4)
 
         self.progress = ttk.Progressbar(controls, mode="indeterminate", length=150)
         self.progress.pack(side="right", padx=(8, 12))
@@ -210,9 +254,9 @@ class LexFlowDesktopApp:
 
     def _build_overview_tab(self) -> None:
         tab = ttk.Frame(self.notebook, padding=12)
-        self.notebook.add(tab, text="Умумий натижа")
+        self.notebook.add(tab, text=self._t("tab_overview"))
 
-        description_box = ttk.LabelFrame(tab, text="Назорат мисоли тавсифи", padding=10)
+        description_box = ttk.LabelFrame(tab, text=self._t("description"), padding=10)
         description_box.pack(fill="x")
         ttk.Label(
             description_box,
@@ -225,26 +269,26 @@ class LexFlowDesktopApp:
         cards.pack(fill="x")
         for column in range(5):
             cards.columnconfigure(column, weight=1, uniform="cards")
-        self.card_closed = MetricCard(cards, "Ёпиқ λ*")
-        self.card_lp = MetricCard(cards, "LP λ*")
-        self.card_theta = MetricCard(cards, "2-босқич қониқиш")
-        self.card_omega = MetricCard(cards, "3-босқич вариация")
-        self.card_status = MetricCard(cards, "Верификация")
+        self.card_closed = MetricCard(cards, self._t("card_closed"))
+        self.card_lp = MetricCard(cards, self._t("card_lp"))
+        self.card_theta = MetricCard(cards, self._t("card_stage2"))
+        self.card_omega = MetricCard(cards, self._t("card_stage3"))
+        self.card_status = MetricCard(cards, self._t("card_verification"))
         for index, card in enumerate(
             (self.card_closed, self.card_lp, self.card_theta, self.card_omega, self.card_status)
         ):
             card.grid(row=0, column=index, sticky="nsew", padx=5)
 
-        stage_box = ttk.LabelFrame(tab, text="Лексикографик босқичлар", padding=8)
+        stage_box = ttk.LabelFrame(tab, text=self._t("stages"), padding=8)
         stage_box.pack(fill="both", expand=True)
         columns = ("stage", "min", "satisfaction", "variation", "status")
         self.stage_tree = ttk.Treeview(stage_box, columns=columns, show="headings", height=8)
         headings = {
-            "stage": "Босқич",
-            "min": "Минимал нисбат",
-            "satisfaction": "Вазнланган қониқиш",
-            "variation": "Вақт вариацияси",
-            "status": "Solver ҳолати",
+            "stage": self._t("h_stage"),
+            "min": self._t("h_min"),
+            "satisfaction": self._t("h_satisfaction"),
+            "variation": self._t("h_variation"),
+            "status": self._t("h_solver"),
         }
         widths = {"stage": 150, "min": 170, "satisfaction": 210, "variation": 190, "status": 140}
         for column in columns:
@@ -252,29 +296,29 @@ class LexFlowDesktopApp:
             self.stage_tree.column(column, width=widths[column], anchor="center")
         self.stage_tree.pack(fill="both", expand=True)
 
-        self.active_resource_var = tk.StringVar(value="Фаол ресурслар: —")
+        self.active_resource_var = tk.StringVar(value=self._t("active_resources", resources="—"))
         ttk.Label(tab, textvariable=self.active_resource_var, padding=(3, 8, 3, 0)).pack(anchor="w")
 
     def _build_allocations_tab(self) -> None:
         tab = ttk.Frame(self.notebook, padding=10)
-        self.notebook.add(tab, text="Тақсимотлар")
+        self.notebook.add(tab, text=self._t("tab_allocations"))
         paned = ttk.Panedwindow(tab, orient="horizontal")
         paned.pack(fill="both", expand=True)
 
-        table_frame = ttk.LabelFrame(paned, text="Фаол давр–истеъмолчи ёзувлари", padding=6)
-        chart_frame = ttk.LabelFrame(paned, text="1-, 2- ва 3-босқич профили", padding=6)
+        table_frame = ttk.LabelFrame(paned, text=self._t("records"), padding=6)
+        chart_frame = ttk.LabelFrame(paned, text=self._t("profile"), padding=6)
         paned.add(table_frame, weight=3)
         paned.add(chart_frame, weight=2)
 
         columns = ("period", "user", "demand", "s1", "s2", "s3")
         self.ratio_tree = ttk.Treeview(table_frame, columns=columns, show="headings")
         headings = {
-            "period": "Давр",
-            "user": "Истеъмолчи",
-            "demand": "Талаб",
-            "s1": "1-босқич",
-            "s2": "2-босқич",
-            "s3": "3-босқич",
+            "period": self._t("h_period"),
+            "user": self._t("h_user"),
+            "demand": self._t("h_demand"),
+            "s1": self._t("stage1"),
+            "s2": self._t("stage2"),
+            "s3": self._t("stage3"),
         }
         widths = {"period": 90, "user": 120, "demand": 100, "s1": 105, "s2": 105, "s3": 105}
         for column in columns:
@@ -287,7 +331,7 @@ class LexFlowDesktopApp:
 
         user_controls = ttk.Frame(chart_frame)
         user_controls.pack(fill="x", pady=(0, 6))
-        ttk.Label(user_controls, text="Истеъмолчи:").pack(side="left")
+        ttk.Label(user_controls, text=self._t("user")).pack(side="left")
         self.user_combo = ttk.Combobox(
             user_controls,
             textvariable=self.user_var,
@@ -307,14 +351,14 @@ class LexFlowDesktopApp:
 
     def _build_verification_tab(self) -> None:
         tab = ttk.Frame(self.notebook, padding=10)
-        self.notebook.add(tab, text="Верификация")
+        self.notebook.add(tab, text=self._t("tab_verification"))
         columns = ("check", "value", "criterion", "status")
         self.verify_tree = ttk.Treeview(tab, columns=columns, show="headings")
         headings = {
-            "check": "Текширув",
-            "value": "Ҳисобланган қиймат",
-            "criterion": "Қабул мезони",
-            "status": "Натижа",
+            "check": self._t("h_check"),
+            "value": self._t("h_value"),
+            "criterion": self._t("h_criterion"),
+            "status": self._t("h_result"),
         }
         widths = {"check": 360, "value": 220, "criterion": 300, "status": 100}
         for column in columns:
@@ -324,14 +368,14 @@ class LexFlowDesktopApp:
         self.verify_tree.tag_configure("fail", foreground="#a11d1d")
         self.verify_tree.pack(fill="both", expand=True)
 
-        detail_frame = ttk.LabelFrame(tab, text="Математик маълумот", padding=8)
+        detail_frame = ttk.LabelFrame(tab, text=self._t("math_details"), padding=8)
         detail_frame.pack(fill="x", pady=(10, 0))
         self.verification_detail_var = tk.StringVar(value="—")
         ttk.Label(detail_frame, textvariable=self.verification_detail_var, wraplength=1180, justify="left").pack(anchor="w")
 
     def _build_network_tab(self) -> None:
         tab = ttk.Frame(self.notebook, padding=8)
-        self.notebook.add(tab, text="Тармоқ")
+        self.notebook.add(tab, text=self._t("tab_network"))
         self.network_figure = Figure(figsize=(9.0, 5.2), dpi=100, constrained_layout=True)
         self.network_ax = self.network_figure.add_subplot(111)
         self.network_canvas = FigureCanvasTkAgg(self.network_figure, master=tab)
@@ -342,18 +386,18 @@ class LexFlowDesktopApp:
 
     def _build_files_tab(self) -> None:
         tab = ttk.Frame(self.notebook, padding=10)
-        self.notebook.add(tab, text="Натижа файллари")
+        self.notebook.add(tab, text=self._t("tab_files"))
         controls = ttk.Frame(tab)
         controls.pack(fill="x", pady=(0, 8))
-        ttk.Button(controls, text="Янгилаш", command=self._refresh_result_files).pack(side="left")
-        ttk.Button(controls, text="Танланган файлни очиш", command=self._open_selected_result).pack(side="left", padx=6)
-        ttk.Button(controls, text="results папкасини очиш", command=lambda: self._open_path(self.project_root / "results")).pack(side="left")
+        ttk.Button(controls, text=self._t("refresh"), command=self._refresh_result_files).pack(side="left")
+        ttk.Button(controls, text=self._t("open_selected"), command=self._open_selected_result).pack(side="left", padx=6)
+        ttk.Button(controls, text=self._t("open_results"), command=lambda: self._open_path(self.project_root / "results")).pack(side="left")
 
         columns = ("path", "size", "modified")
         self.file_tree = ttk.Treeview(tab, columns=columns, show="headings")
-        self.file_tree.heading("path", text="Нисбий йўл")
-        self.file_tree.heading("size", text="Ҳажм")
-        self.file_tree.heading("modified", text="Ўзгартирилган вақт")
+        self.file_tree.heading("path", text=self._t("h_path"))
+        self.file_tree.heading("size", text=self._t("h_size"))
+        self.file_tree.heading("modified", text=self._t("h_modified"))
         self.file_tree.column("path", width=760, anchor="w")
         self.file_tree.column("size", width=120, anchor="e")
         self.file_tree.column("modified", width=180, anchor="center")
@@ -365,7 +409,7 @@ class LexFlowDesktopApp:
 
     def _build_log_tab(self) -> None:
         tab = ttk.Frame(self.notebook, padding=8)
-        self.notebook.add(tab, text="Журнал")
+        self.notebook.add(tab, text=self._t("tab_log"))
         self.log_text = scrolledtext.ScrolledText(
             tab,
             wrap="word",
@@ -373,12 +417,16 @@ class LexFlowDesktopApp:
             state="disabled",
         )
         self.log_text.pack(fill="both", expand=True)
+        if self._log_entries:
+            self.log_text.configure(state="normal")
+            self.log_text.insert("end", "\n".join(self._log_entries) + "\n")
+            self.log_text.configure(state="disabled")
 
     def _build_statusbar(self) -> None:
         frame = ttk.Frame(self.root, padding=(18, 4, 18, 8))
         frame.pack(fill="x")
         ttk.Label(frame, textvariable=self.status_var).pack(side="left")
-        ttk.Label(frame, text="AppliedMath v0.3.0 · фақат детерминистик модель").pack(side="right")
+        ttk.Label(frame, text=self._t("footer")).pack(side="right")
 
     def _set_busy(self, busy: bool, message: str | None = None) -> None:
         self._busy = busy
@@ -398,7 +446,7 @@ class LexFlowDesktopApp:
         on_success: Callable[[T], None],
     ) -> None:
         if self._busy:
-            self.status_var.set("Бошқа вазифа бажарилмоқда.")
+            self.status_var.set(self._t("busy"))
             return
         self._set_busy(True, label)
         self._log(label)
@@ -406,7 +454,7 @@ class LexFlowDesktopApp:
         def target() -> None:
             try:
                 self._task_queue.put(("ok", worker()))
-            except Exception:
+            except Exception:  # noqa: BLE001 - GUI worker must surface any task failure
                 self._task_queue.put(("error", traceback.format_exc()))
 
         threading.Thread(target=target, daemon=True).start()
@@ -421,7 +469,7 @@ class LexFlowDesktopApp:
             if kind == "ok":
                 try:
                     on_success(payload)  # type: ignore[arg-type]
-                except Exception:
+                except Exception:  # noqa: BLE001 - callback failures belong in the GUI log
                     self._handle_error(traceback.format_exc())
             else:
                 self._handle_error(str(payload))
@@ -433,16 +481,16 @@ class LexFlowDesktopApp:
         initial_dir = benchmarks_dir if benchmarks_dir.is_dir() else self.project_root
         path_str = filedialog.askopenfilename(
             parent=self.root,
-            title="Тармоқ очиш",
+            title=self._t("dialog_open"),
             initialdir=str(initial_dir),
-            filetypes=[("Benchmark JSON", "*.json"), ("Барча файллар", "*.*")],
+            filetypes=[("Benchmark JSON", "*.json"), (self._t("all_files"), "*.*")],
         )
         if not path_str:
             return
         path = Path(path_str)
         self._current_benchmark_path = path
         self._submit_task(
-            f"{path.name} юкланмоқда ва ҳисобланмоқда...",
+            self._t("loading", name=path.name),
             lambda: solve_benchmark_at_path(path),
             self._display_snapshot,
         )
@@ -451,25 +499,30 @@ class LexFlowDesktopApp:
         path = self._current_benchmark_path
         if path is None:
             messagebox.showwarning(
-                "Тармоқ танланмади",
-                "Аввал \"Файл > Тармоқ очиш\" орқали benchmark файлини танланг.",
+                self._t("warning_no_network"),
+                self._t("warning_choose"),
                 parent=self.root,
             )
             return
         self._submit_task(
-            f"{path.name} қайта ҳисобланмоқда...",
+            self._t("recalculating", name=path.name),
             lambda: solve_benchmark_at_path(path),
             self._display_snapshot,
         )
 
-    def _display_snapshot(self, snapshot: BenchmarkSnapshot) -> None:
+    def _display_snapshot(self, snapshot: BenchmarkSnapshot, *, log_result: bool = True) -> None:
         self.snapshot = snapshot
         model = snapshot.model
         self.benchmark_name_var.set(model.name)
         self.description_var.set(
-            f"{benchmark_description_uz(model)}\n"
-            f"Тузилма: {len(model.nodes)} тугун, {len(model.edges)} қирра, "
-            f"{len(model.users)} истеъмолчи, {len(model.periods)} давр."
+            f"{benchmark_description(model, self.language)}\n"
+            + self._t(
+                "structure",
+                nodes=len(model.nodes),
+                edges=len(model.edges),
+                users=len(model.users),
+                periods=len(model.periods),
+            )
         )
         self.card_closed.set(
             f"{fraction_string(snapshot.closed_form.lambda_star)}\n({float(snapshot.closed_form.lambda_star):.9f})"
@@ -479,14 +532,20 @@ class LexFlowDesktopApp:
         self.card_omega.set(f"{snapshot.solution.stage3.temporal_variation:.9f}")
         self.card_status.set("PASS" if snapshot.verification_passed else "FAIL")
         self.active_resource_var.set(
-            "Фаол ресурслар: " + ", ".join(resource_label_uz(item) for item in snapshot.closed_form.active_resources)
+            self._t(
+                "active_resources",
+                resources=", ".join(
+                    resource_label(item, self.language)
+                    for item in snapshot.closed_form.active_resources
+                ),
+            )
         )
 
-        self._replace_tree_rows(self.stage_tree, stage_rows(snapshot))
+        self._replace_tree_rows(self.stage_tree, stage_rows(snapshot, self.language))
         self._replace_tree_rows(self.ratio_tree, ratio_rows(snapshot))
         self._replace_tree_rows(
             self.verify_tree,
-            verification_rows(snapshot),
+            verification_rows(snapshot, language=self.language),
             tag_index=3,
         )
         users = users_with_activity(model)
@@ -498,23 +557,25 @@ class LexFlowDesktopApp:
         exact_difference = fraction_string(snapshot.operator_verification.maximum_absolute_difference)
         node_residual = fraction_string(snapshot.operator_verification.maximum_node_residual)
         self.verification_detail_var.set(
-            f"λ* closed form = {fraction_string(snapshot.closed_form.lambda_star)}; "
-            f"λ* LP = {snapshot.stage1_lp.lambda_star:.12g}; "
-            f"абсолют фарқ = {snapshot.closed_form_lp_difference:.3e}. "
-            f"Аниқ оператор–баланс фарқи = {exact_difference}; "
-            f"аниқ тугун residual = {node_residual}; "
-            f"3-босқич физик бузилиши = {snapshot.maximum_physical_violation:.3e}."
+            self._t(
+                "verification_detail",
+                closed=fraction_string(snapshot.closed_form.lambda_star),
+                lp=f"{snapshot.stage1_lp.lambda_star:.12g}",
+                difference=f"{snapshot.closed_form_lp_difference:.3e}",
+                operator=exact_difference,
+                residual=node_residual,
+                physical=f"{snapshot.maximum_physical_violation:.3e}",
+            )
         )
-        self.status_var.set(
-            f"{model.name}: ҳисоблаш тугалланди — "
-            f"{'PASS' if snapshot.verification_passed else 'FAIL'}"
-        )
-        self._log(
-            f"{model.name}: λ*={float(snapshot.closed_form.lambda_star):.9f}, "
-            f"θ*={snapshot.solution.stage2.weighted_satisfaction:.9f}, "
-            f"Ω3={snapshot.solution.stage3.temporal_variation:.9f}, "
-            f"status={'PASS' if snapshot.verification_passed else 'FAIL'}"
-        )
+        status = "PASS" if snapshot.verification_passed else "FAIL"
+        self.status_var.set(self._t("completed", name=model.name, status=status))
+        if log_result:
+            self._log(
+                f"{model.name}: λ*={float(snapshot.closed_form.lambda_star):.9f}, "
+                f"θ*={snapshot.solution.stage2.weighted_satisfaction:.9f}, "
+                f"Ω3={snapshot.solution.stage3.temporal_variation:.9f}, "
+                f"status={status}"
+            )
 
     @staticmethod
     def _replace_tree_rows(
@@ -533,20 +594,20 @@ class LexFlowDesktopApp:
     def _draw_allocation_chart(self) -> None:
         self.allocation_ax.clear()
         if self.snapshot is None or not self.user_var.get():
-            self.allocation_ax.set_title("Ҳисоблаш натижаси мавжуд эмас")
+            self.allocation_ax.set_title(self._t("no_results"))
             self.allocation_canvas.draw_idle()
             return
         user = self.user_var.get()
         periods, stage1, stage2, stage3 = period_series(self.snapshot, user)
         x = np.arange(len(periods))
-        self.allocation_ax.plot(x, stage1, marker="o", label="1-босқич")
-        self.allocation_ax.plot(x, stage2, marker="s", label="2-босқич")
-        self.allocation_ax.plot(x, stage3, marker="^", label="3-босқич")
+        self.allocation_ax.plot(x, stage1, marker="o", label=self._t("stage1"))
+        self.allocation_ax.plot(x, stage2, marker="s", label=self._t("stage2"))
+        self.allocation_ax.plot(x, stage3, marker="^", label=self._t("stage3"))
         self.allocation_ax.set_xticks(x, periods)
         self.allocation_ax.set_ylim(0.0, 1.05)
-        self.allocation_ax.set_xlabel("Давр")
-        self.allocation_ax.set_ylabel("Талабни қондириш нисбати")
-        self.allocation_ax.set_title(f"{user}: лексикографик тақсимот профили")
+        self.allocation_ax.set_xlabel(self._t("chart_xlabel"))
+        self.allocation_ax.set_ylabel(self._t("chart_ylabel"))
+        self.allocation_ax.set_title(self._t("chart_title", user=user))
         self.allocation_ax.grid(True, alpha=0.3)
         self.allocation_ax.legend(loc="best")
         self.allocation_canvas.draw_idle()
@@ -569,7 +630,7 @@ class LexFlowDesktopApp:
     def _draw_network(self) -> None:
         self.network_ax.clear()
         if self.snapshot is None:
-            self.network_ax.set_title("Ҳисоблаш натижаси мавжуд эмас")
+            self.network_ax.set_title(self._t("no_results"))
             self.network_canvas.draw_idle()
             return
         model = self.snapshot.model
@@ -601,16 +662,15 @@ class LexFlowDesktopApp:
             rotate=False,
             ax=self.network_ax,
         )
-        self.network_ax.set_title(f"{model.name}: йўналтирилган дарахт тармоғи")
+        self.network_ax.set_title(self._t("network_title", name=model.name))
         self.network_ax.axis("off")
         self.network_canvas.draw_idle()
 
     def save_current_benchmark_result(self) -> None:
         if self.snapshot is None or self._current_benchmark_path is None:
             messagebox.showwarning(
-                "Тармоқ танланмади",
-                "Аввал \"Файл > Тармоқ очиш\" орқали benchmark файлини очинг ва "
-                "ҳисоблаш тугашини кутинг.",
+                self._t("warning_no_network"),
+                self._t("warning_open_first"),
                 parent=self.root,
             )
             return
@@ -618,7 +678,7 @@ class LexFlowDesktopApp:
         initial_dir = default_dir if default_dir.is_dir() else self.project_root
         output_dir = filedialog.askdirectory(
             parent=self.root,
-            title="Натижани сақлаш — папка танланг",
+            title=self._t("choose_output"),
             initialdir=str(initial_dir),
             mustexist=False,
         )
@@ -626,7 +686,7 @@ class LexFlowDesktopApp:
             return
         path = self._current_benchmark_path
         self._submit_task(
-            f"{self.benchmark_name_var.get()} натижалари сақланмоқда...",
+            self._t("saving", name=self.benchmark_name_var.get()),
             lambda: save_benchmark_result(self.project_root, path, output_dir),
             self._save_result_ready,
         )
@@ -635,18 +695,17 @@ class LexFlowDesktopApp:
         self._refresh_result_files()
         status = str(summary.get("verification_status", "UNKNOWN"))
         folder = str(summary.get("output_folder", "?"))
-        self.status_var.set(f"Натижа сақланди: {status}")
-        self._log("Натижа сақланди:\n" + "\n".join(f"  {key}: {value}" for key, value in summary.items()))
+        self.status_var.set(self._t("saved", status=status))
+        self._log(self._t("saved_title") + ":\n" + "\n".join(f"  {key}: {value}" for key, value in summary.items()))
         messagebox.showinfo(
-            "Натижа сақланди",
-            f"Тармоқ, профиль, матрица ва верификация натижалари шу папкага сақланди:\n{folder}\n\n"
-            f"Verification status: {status}",
+            self._t("saved_title"),
+            self._t("saved_message", folder=folder, status=status),
             parent=self.root,
         )
 
     def generate_article_outputs(self) -> None:
         self._submit_task(
-            "Барча жадвал, figure-data ва журнал расмлари қайта яратилмоқда...",
+            self._t("generating"),
             lambda: generate_article_results(self.project_root),
             self._article_outputs_ready,
         )
@@ -654,56 +713,53 @@ class LexFlowDesktopApp:
     def _article_outputs_ready(self, summary: dict[str, object]) -> None:
         self._refresh_result_files()
         status = str(summary.get("verification_status", "UNKNOWN"))
-        self.status_var.set(f"Мақола натижалари яратилди: {status}")
-        self._log("Мақола натижалари:\n" + "\n".join(f"  {key}: {value}" for key, value in summary.items()))
-        warnings = summary.get("figure_warnings") or []
-        message = (
-            "Жадваллар, figure-data ва PNG расмлар results/ папкасида "
-            "(ҳар бир тармоқ ўз алоҳида папкасида) қайта яратилди.\n"
-            f"Verification status: {status}"
+        self.status_var.set(self._t("generated", status=status))
+        self._log(
+            self._t("generated", status=status)
+            + ":\n"
+            + "\n".join(f"  {key}: {value}" for key, value in summary.items())
         )
+        warnings = summary.get("figure_warnings") or []
+        message = self._t("generated_message", status=status)
         if warnings:
-            self._log("ОГОҲЛАНТИРИШ — қуйидагилар бошқа дастур томонидан очиқ бўлгани учун "
-                       "тўлиқ янгиланмади:\n" + "\n".join(f"  {item}" for item in warnings))
-            message += (
-                "\n\nОГОҲЛАНТИРИШ: баъзи файл/папкалар бошқа дастур (расм кўрувчи, Explorer "
-                "ёки IDE) томонидан очиқ бўлгани учун тўлиқ янгиланмади. Уларни ёпиб, "
-                "натижаларни қайта яратинг. Батафсил: Журнал вкладкаси."
-            )
-        messagebox.showinfo("Натижалар тайёр", message, parent=self.root)
+            self._log(self._t("generated_warning") + "\n" + "\n".join(f"  {item}" for item in warnings))
+            message += "\n\n" + self._t("generated_warning")
+        messagebox.showinfo(self._t("generated_title"), message, parent=self.root)
 
     def run_test_suite(self) -> None:
         self._submit_task(
-            "Pytest автоматик текширувлари бажарилмоқда...",
+            self._t("testing"),
             lambda: run_tests(self.project_root),
             self._tests_ready,
         )
 
     def _tests_ready(self, result: tuple[int, str]) -> None:
         return_code, output = result
-        self._log("Pytest натижаси:\n" + (output or "(output йўқ)"))
+        self._log("Pytest:\n" + (output or "(no output)"))
         if return_code == 0:
-            self.status_var.set("Барча автоматик тестлар PASS")
-            messagebox.showinfo("Тестлар", "Барча автоматик тестлар муваффақиятли ўтди.", parent=self.root)
+            self.status_var.set(self._t("tests_passed"))
+            messagebox.showinfo(self._t("tests"), self._t("tests_passed_message"), parent=self.root)
         else:
-            self.status_var.set("Тестларда хато бор")
-            messagebox.showerror("Тестлар", "Тестлардан камида бири ўтмади. Журнал вкладкасини текширинг.", parent=self.root)
+            self.status_var.set(self._t("tests_failed"))
+            messagebox.showerror(self._t("tests"), self._t("tests_failed_message"), parent=self.root)
 
     def export_current(self) -> None:
         if self.snapshot is None:
-            messagebox.showwarning("CSV/Excel экспорт", "Аввал назорат мисолини ечинг.", parent=self.root)
+            messagebox.showwarning(self._t("export"), self._t("export_first"), parent=self.root)
             return
         try:
-            ratios_path, verification_path = export_snapshot(self.snapshot, self.project_root)
-        except Exception:
+            ratios_path, verification_path = export_snapshot(
+                self.snapshot, self.project_root, self.language
+            )
+        except Exception:  # noqa: BLE001 - export errors are reported in the GUI
             self._handle_error(traceback.format_exc())
             return
         self._refresh_result_files()
-        self.status_var.set("Жорий назорат мисоли CSV/Excel файлларга экспорт қилинди")
-        self._log(f"CSV/Excel экспорт: {ratios_path}\nCSV/Excel экспорт: {verification_path}")
+        self.status_var.set(self._t("exported"))
+        self._log(f"CSV/Excel: {ratios_path}\nCSV/Excel: {verification_path}")
         messagebox.showinfo(
-            "CSV/Excel экспорт",
-            f"Файллар сақланди (ҳар бирининг excel/ нусхаси ҳам бор):\n{ratios_path}\n{verification_path}",
+            self._t("export"),
+            self._t("exported_message", ratios=ratios_path, verification=verification_path),
             parent=self.root,
         )
 
@@ -746,19 +802,21 @@ class LexFlowDesktopApp:
             subprocess.Popen(["xdg-open", str(path)])
 
     def _log(self, text: str) -> None:
+        normalized = text.rstrip()
+        self._log_entries.append(normalized)
         if not hasattr(self, "log_text"):
             return
         self.log_text.configure(state="normal")
-        self.log_text.insert("end", text.rstrip() + "\n")
+        self.log_text.insert("end", normalized + "\n")
         self.log_text.see("end")
         self.log_text.configure(state="disabled")
 
     def _handle_error(self, details: str) -> None:
-        self._set_busy(False, "Хато юз берди")
+        self._set_busy(False, self._t("error_status"))
         self._log(details)
         messagebox.showerror(
-            "Хато",
-            "Вазифани бажаришда хато юз берди. Батафсил маълумот Журнал вкладкасида.",
+            self._t("error_title"),
+            self._t("error_message"),
             parent=self.root,
         )
 
@@ -768,22 +826,15 @@ class LexFlowDesktopApp:
 
     def _show_boundary(self) -> None:
         messagebox.showinfo(
-            "Модель чегараси",
-            "Ушбу desktop GUI аниқ параметрларга эга детерминистик rooted-tree "
-            "benchmark’ларни ечади. Сценарийли, стохастик ва робаст оптималлаштириш "
-            "ишлатилмайди. Натижалар математик верификацияга тегишли бўлиб, дала "
-            "валидацияси ёки муайян канал тизимининг эксплуатацион баҳоси эмас.",
+            self._t("boundary_title"),
+            self._t("boundary_message"),
             parent=self.root,
         )
 
     def _show_about(self) -> None:
         messagebox.showinfo(
-            "Дастур ҳақида",
-            "AppliedMath LexFlow Desktop v0.3.0\n\n"
-            "1-босқич: max–min адолат ва ёпиқ ечим.\n"
-            "2-босқич: вазнланган мавсумий қониқиш.\n"
-            "3-босқич: вақт бўйича тақсимот вариациясини минималлаштириш.\n\n"
-            "GUI ва CLI бир хил appliedmath_lexflow solver пакетидан фойдаланади.",
+            self._t("about_title"),
+            self._t("about_message"),
             parent=self.root,
         )
 
@@ -792,7 +843,7 @@ def main(project_root: str | Path | None = None) -> int:
     try:
         resolved_root = find_project_root(project_root or Path.cwd())
         root = tk.Tk()
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 - startup must fail with a readable message
         print(f"Desktop GUI could not start: {exc}", file=sys.stderr)
         return 1
 

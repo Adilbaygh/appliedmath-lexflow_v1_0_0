@@ -1,15 +1,18 @@
-# AppliedMath LexFlow Desktop GUI
+# AppliedMath LexFlow Desktop GUI — Ўзбекча / English
 
 Desktop интерфейс `main.py` орқали ишга тушади ва `src/appliedmath_lexflow/` ичидаги умумий детерминистик ҳисоблаш ядросидан фойдаланади.
+
+Интерфейс икки тилда ишлайди. Менюдаги **Тил / Language** бўлими ёки
+`Ctrl+L` орқали **Ўзбекча** ва **English** ўртасида алмашиш мумкин. Тилни
+алмаштириш solver параметрлари ёки сонли натижаларни ўзгартирмайди.
 
 GUI фақат аниқ параметрларга эга rooted-tree benchmark’ларни ечади. Сценарийли, стохастик ва робаст оптималлаштириш ишлатилмайди. Натижалар синтетик математик мисолларга тегишли бўлиб, дала валидацияси ёки муайян канал тизимининг эксплуатацион баҳоси ҳисобланмайди.
 
 ## Ишга тушириш
 
 ```powershell
-cd "L:\Мой диск\AppliedMath\AppliedMath_Project_v0_1"
+cd "<project-folder>"
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
-.\my-env\Scripts\Activate.ps1
 python -m pip install -e ".[dev]"
 python main.py
 ```
@@ -46,4 +49,16 @@ python -m pytest -p no:cacheprovider
 python -m tkinter
 ```
 
-Кутиладиган тест натижаси: `7 passed`.
+Кутиладиган натижа: барча тестлар `passed`; аниқ сони янги илмий gate’лар
+қўшилганда ўзгариши мумкин.
+
+## English quick start
+
+The desktop application and the publication pipeline call the same
+`appliedmath_lexflow` solver package. Start it with `python main.py`, then choose
+**Language / Тил → English** (or press `Ctrl+L`). Open any JSON benchmark under
+`Data/benchmarks/`, solve it, and inspect the Overview, Allocations,
+Verification, Network, Result Files, and Log tabs. The boundary statement in
+**Help → Model Boundary** is part of the scientific interpretation: the shipped
+examples are deterministic synthetic benchmarks, not field validation of a
+specific canal system.

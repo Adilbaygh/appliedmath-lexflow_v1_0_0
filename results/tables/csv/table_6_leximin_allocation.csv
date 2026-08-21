@@ -1,7 +1,7 @@
-benchmark,leximin_minimum_ratio,leximin_weighted_satisfaction,leximin_temporal_variation,leximin_levels
-branching_shared_edge_bottleneck,0.7806122448979591,0.823922902494331,0.0,0.780612; 0.888889
+benchmark,leximin_minimum_ratio,leximin_weighted_satisfaction,leximin_temporal_variation,leximin_levels_rounded_6dp
+branching_shared_edge_bottleneck,0.7806122448979592,0.8239229024943312,0.0,0.780612; 0.888889
 chain_source_bottleneck,0.72,0.72,0.0,0.720000
-gone_abat_jap,0.8499999999821292,0.9018727166643,4.8000000000271505,0.850000; 0.900000; 1.000000
-star_edge_bottleneck,0.7000000000000001,0.7857142857142857,0.0,0.700000; 0.900000
-temporal_lexicographic,0.6,0.7333333333333333,0.40000000000000024,0.600000; 0.800000
+gone_abat_jap,0.8499999999996504,0.9018727166643107,4.8000000000066745,0.850000; 0.900000; 1.000000
+star_edge_bottleneck,0.7,0.7857142857142857,0.0,0.700000; 0.900000
+temporal_lexicographic,0.6,0.7333333333333333,0.40000000000000013,0.600000; 0.800000
 tie_bottleneck,0.75,0.75,0.0,0.750000

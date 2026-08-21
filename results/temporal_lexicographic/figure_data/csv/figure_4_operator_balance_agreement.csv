@@ -1,7 +1,0 @@
-benchmark,period,edge,operator_flow,node_balance_flow,exact_difference
-temporal_lexicographic,k1,e1,6.4,6.4,0
-temporal_lexicographic,k1,e2,1.6,1.6,0
-temporal_lexicographic,k2,e1,1.6,1.6,0
-temporal_lexicographic,k2,e2,6.4,6.4,0
-temporal_lexicographic,k3,e1,4.8,4.8,0
-temporal_lexicographic,k3,e2,1.2,1.2,0

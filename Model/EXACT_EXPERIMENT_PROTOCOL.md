@@ -55,8 +55,18 @@ $$
 \Omega(r^{(3)})<\Omega(r^{(2)}).
 $$
 
-The current prespecified instance yields $0.75$ at Stage 2 and approximately $0.40$ at Stage 3.
+The current HiGHS version selects a Stage-2 vertex with $\Omega=0.75$, while
+Stage 3 returns $\Omega_{\min}=2/5=0.40$. Because the Stage-2 optimal-face range
+is $[2/5,21/20]$, the value $0.75$ is a solver-vertex diagnostic rather than an
+invariant property.
 
-## E5. Reproducibility
+## E5. Deterministic scale suite
+
+Generate complete binary trees for $F\in\{20,50,100,250,500\}$ with
+$P=2^{\lceil\log_2F\rceil}$ leaves. Require the exact node-balance evaluation
+and a path-sparse HiGHS Stage-1 LP to return $\lambda^*=3/5$ within
+$5\times10^{-7}$ for every size.
+
+## E6. Reproducibility
 
 Record dependency versions, platform information, input SHA-256 hashes, output SHA-256 hashes, and UTC generation time. Rerunning the same commit and dependency set must reproduce all exact tables and preserve numerical values within the declared tolerance.

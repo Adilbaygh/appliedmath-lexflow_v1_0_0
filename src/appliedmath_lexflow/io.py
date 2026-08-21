@@ -130,6 +130,11 @@ def validate_benchmark(model: Benchmark) -> None:
     for user in model.users:
         if user.terminal not in model.nodes:
             raise ValueError(f"Unknown terminal {user.terminal!r} for user {user.user_id!r}.")
+        if graph.out_degree(user.terminal) != 0:
+            raise ValueError(
+                f"User {user.user_id!r} must be assigned to a terminal leaf; "
+                f"node {user.terminal!r} has outgoing edges."
+            )
         if user.weight <= 0:
             raise ValueError("Service weights must be strictly positive.")
 
@@ -156,3 +161,6 @@ def validate_benchmark(model: Benchmark) -> None:
         for value in model.efficiency[period].values():
             if not (Fraction(0) < value <= Fraction(1)):
                 raise ValueError("Efficiencies must lie in (0, 1].")
+
+    if not model.active_records:
+        raise ValueError("At least one positive-demand service record is required.")

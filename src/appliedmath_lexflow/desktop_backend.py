@@ -7,13 +7,13 @@ to test in headless CI environments and guarantee that the desktop application,
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from datetime import datetime
-from fractions import Fraction
-from pathlib import Path
 import json
 import subprocess
 import sys
+from dataclasses import dataclass
+from datetime import UTC, datetime
+from fractions import Fraction
+from pathlib import Path
 
 import pandas as pd
 
@@ -21,12 +21,21 @@ from .domain import Benchmark
 from .examples import load_all_benchmarks
 from .lexicographic import ThreeStageSolution, solve_three_stage
 from .operators import build_operator_exact
-from .stage1 import Stage1ClosedForm, Stage1LP, solve_stage1_closed_form, solve_stage1_lp
+from .stage1 import (
+    Stage1ClosedForm,
+    Stage1LP,
+    solve_stage1_closed_form,
+    solve_stage1_lp,
+)
 from .tables import write_table
-from .verification import OperatorVerification, maximum_physical_violation, verify_operator_exact
+from .verification import (
+    OperatorVerification,
+    maximum_physical_violation,
+    verify_operator_exact,
+)
 
-
-_BENCHMARK_DESCRIPTIONS_UZ = {
+_BENCHMARK_DESCRIPTIONS = {
+    "uz": {
     "branching_shared_edge_bottleneck": (
         "Иккита қуйи истеъмолчи учун умумий ички қирра чекловчи ресурс бўладиган "
         "тармоқланувчи дарахт мисоли."
@@ -48,23 +57,66 @@ _BENCHMARK_DESCRIPTIONS_UZ = {
         "Манба ва маҳаллий қирра бир вақтда $\\lambda=3/4$ қийматида чекловчи "
         "ресурс бўладиган юлдузсимон тармоқ."
     ),
+    },
+    "en": {
+        "branching_shared_edge_bottleneck": (
+            "A branching tree in which one shared internal edge is the binding "
+            "resource for two downstream users."
+        ),
+        "chain_source_bottleneck": (
+            "A single-user serial canal chain whose Stage-1 optimum is determined "
+            "by source capacity."
+        ),
+        "star_edge_bottleneck": (
+            "A two-terminal star network in which one local edge is the unique "
+            "binding resource."
+        ),
+        "temporal_lexicographic": (
+            "A three-period, two-user example with multiple Stage-2 optima; Stage 3 "
+            "selects a temporally smoother allocation from that optimal face."
+        ),
+        "tie_bottleneck": (
+            "A star network in which the source and a local edge bind simultaneously "
+            "at lambda = 3/4."
+        ),
+    },
 }
 
 
-def benchmark_description_uz(model: Benchmark) -> str:
-    """Return a user-facing Uzbek description while preserving the source benchmark."""
+def benchmark_description(model: Benchmark, language: str = "uz") -> str:
+    """Return a localized description while preserving the source benchmark."""
 
-    return _BENCHMARK_DESCRIPTIONS_UZ.get(model.name, model.description)
+    from .i18n import normalize_language
+
+    language = normalize_language(language)
+    return _BENCHMARK_DESCRIPTIONS[language].get(model.name, model.description)
+
+
+def benchmark_description_uz(model: Benchmark) -> str:
+    """Backward-compatible Uzbek description helper."""
+
+    return benchmark_description(model, "uz")
+
+
+def resource_label(label: str, language: str = "uz") -> str:
+    from .i18n import normalize_language
+
+    language = normalize_language(language)
+    if label == "demand_upper_bound":
+        return "талабнинг юқори чегараси" if language == "uz" else "demand upper bound"
+    if label.startswith("source:"):
+        prefix = "манба:" if language == "uz" else "source:"
+        return prefix + label.removeprefix("source:")
+    if label.startswith("edge:"):
+        prefix = "қирра:" if language == "uz" else "edge:"
+        return prefix + label.removeprefix("edge:")
+    return label
 
 
 def resource_label_uz(label: str) -> str:
-    if label == "demand_upper_bound":
-        return "талабнинг юқори чегараси"
-    if label.startswith("source:"):
-        return "манба:" + label.removeprefix("source:")
-    if label.startswith("edge:"):
-        return "қирра:" + label.removeprefix("edge:")
-    return label
+    """Backward-compatible Uzbek resource helper."""
+
+    return resource_label(label, "uz")
 
 
 @dataclass(frozen=True, slots=True)
@@ -183,18 +235,28 @@ def solve_benchmark_at_path(path: str | Path) -> BenchmarkSnapshot:
     return _solve_snapshot(model)
 
 
-def stage_rows(snapshot: BenchmarkSnapshot) -> tuple[tuple[str, str, str, str, str], ...]:
+def stage_rows(
+    snapshot: BenchmarkSnapshot, language: str = "uz"
+) -> tuple[tuple[str, str, str, str, str], ...]:
     """Return presentation-ready Stage 1/2/3 rows."""
 
+    from .i18n import normalize_language
+
+    language = normalize_language(language)
+    stage_names = {
+        "uz": {"Stage 1": "1-босқич", "Stage 2": "2-босқич", "Stage 3": "3-босқич"},
+        "en": {"Stage 1": "Stage 1", "Stage 2": "Stage 2", "Stage 3": "Stage 3"},
+    }
+    optimal = "ОПТИМАЛ" if language == "uz" else "OPTIMAL"
     rows: list[tuple[str, str, str, str, str]] = []
     for stage in (snapshot.solution.stage1, snapshot.solution.stage2, snapshot.solution.stage3):
         rows.append(
             (
-                ({"Stage 1": "1-босқич", "Stage 2": "2-босқич", "Stage 3": "3-босқич"}.get(stage.name, stage.name)),
+                stage_names[language].get(stage.name, stage.name),
                 f"{stage.minimum_ratio:.9f}",
                 f"{stage.weighted_satisfaction:.9f}",
                 f"{stage.temporal_variation:.9f}",
-                "ОПТИМАЛ" if stage.status == 0 else str(stage.status),
+                optimal if stage.status == 0 else str(stage.status),
             )
         )
     return tuple(rows)
@@ -222,53 +284,84 @@ def ratio_rows(snapshot: BenchmarkSnapshot) -> tuple[tuple[str, str, str, str, s
 def verification_rows(
     snapshot: BenchmarkSnapshot,
     tolerance: float = 5e-7,
+    language: str = "uz",
 ) -> tuple[tuple[str, str, str, str], ...]:
     """Return declared analytical and numerical verification gates."""
 
+    from .i18n import normalize_language
+
+    language = normalize_language(language)
+    names = {
+        "uz": (
+            "Ёпиқ ечим — LP мослиги",
+            "Graph operator — node balance фарқи",
+            "Тугун баланси қолдиғи",
+            "3-босқич физик чеклов бузилиши",
+            "3-босқич адолат кафолати",
+            "3-босқич қониқишни сақлаши",
+            "3-босқич вариацияни оширмаслиги",
+        ),
+        "en": (
+            "Closed form — LP agreement",
+            "Graph operator — node balance difference",
+            "Node-balance residual",
+            "Stage-3 physical-constraint violation",
+            "Stage-3 fairness guarantee",
+            "Stage-3 satisfaction preservation",
+            "Stage-3 non-increase in variation",
+        ),
+    }[language]
+    exact_criterion = "= 0 (аниқ арифметика)" if language == "uz" else "= 0 (exact arithmetic)"
     solution = snapshot.solution
     lambda_star = float(snapshot.closed_form.lambda_star)
     checks: list[tuple[str, str, str, bool]] = [
         (
-            "Ёпиқ ечим — LP мослиги",
+            names[0],
             f"{snapshot.closed_form_lp_difference:.3e}",
             f"≤ {tolerance:.1e}",
             snapshot.closed_form_lp_difference <= tolerance,
         ),
         (
-            "Graph operator — node balance фарқи",
+            names[1],
             fraction_string(snapshot.operator_verification.maximum_absolute_difference),
-            "= 0 (аниқ арифметика)",
+            exact_criterion,
             snapshot.operator_verification.maximum_absolute_difference == 0,
         ),
         (
-            "Тугун баланси қолдиғи",
+            names[2],
             fraction_string(snapshot.operator_verification.maximum_node_residual),
-            "= 0 (аниқ арифметика)",
+            exact_criterion,
             snapshot.operator_verification.maximum_node_residual == 0,
         ),
         (
-            "3-босқич физик чеклов бузилиши",
+            names[3],
             f"{snapshot.maximum_physical_violation:.3e}",
             f"≤ {tolerance:.1e}",
             snapshot.maximum_physical_violation <= tolerance,
         ),
         (
-            "3-босқич адолат кафолати",
+            names[4],
             f"{solution.stage3.minimum_ratio:.9f}",
             f"≥ λ* = {lambda_star:.9f}",
             solution.stage3.minimum_ratio + tolerance >= lambda_star,
         ),
         (
-            "3-босқич қониқишни сақлаши",
-            f"{solution.stage3.weighted_satisfaction:.9f}",
-            f"≥ 2-босқич = {solution.stage2.weighted_satisfaction:.9f}",
-            solution.stage3.weighted_satisfaction + tolerance
-            >= solution.stage2.weighted_satisfaction,
+            names[5],
+            f"{abs(solution.stage3.weighted_satisfaction - solution.stage2.weighted_satisfaction):.3e}",
+            f"≤ {tolerance:.1e}",
+            abs(
+                solution.stage3.weighted_satisfaction
+                - solution.stage2.weighted_satisfaction
+            )
+            <= tolerance,
         ),
         (
-            "3-босқич вариацияни оширмаслиги",
+            names[6],
             f"{solution.stage3.temporal_variation:.9f}",
-            f"≤ 2-босқич = {solution.stage2.temporal_variation:.9f}",
+            (
+                f"≤ {'2-босқич' if language == 'uz' else 'Stage 2'} = "
+                f"{solution.stage2.temporal_variation:.9f}"
+            ),
             solution.stage3.temporal_variation
             <= solution.stage2.temporal_variation + tolerance,
         ),
@@ -290,13 +383,19 @@ def result_files(project_root: str | Path) -> tuple[ResultFile, ...]:
             ResultFile(
                 relative_path=str(path.relative_to(root)),
                 size_bytes=stat.st_size,
-                modified_at=datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S"),
+                modified_at=datetime.fromtimestamp(stat.st_mtime, tz=UTC)
+                .astimezone()
+                .strftime("%Y-%m-%d %H:%M:%S"),
             )
         )
     return tuple(items)
 
 
-def export_snapshot(snapshot: BenchmarkSnapshot, project_root: str | Path) -> tuple[Path, Path]:
+def export_snapshot(
+    snapshot: BenchmarkSnapshot,
+    project_root: str | Path,
+    language: str = "uz",
+) -> tuple[Path, Path]:
     """Export current GUI values without replacing article-wide generated assets.
 
     Writes both a ``csv/`` copy (for downstream processing) and an ``excel/``
@@ -312,7 +411,8 @@ def export_snapshot(snapshot: BenchmarkSnapshot, project_root: str | Path) -> tu
         columns=["period", "user", "demand", "stage1_ratio", "stage2_ratio", "stage3_ratio"],
     )
     verification_frame = pd.DataFrame(
-        verification_rows(snapshot), columns=["check", "value", "criterion", "status"]
+        verification_rows(snapshot, language=language),
+        columns=["check", "value", "criterion", "status"],
     )
     write_table(ratios_frame, export_dir, f"{safe_name}_allocation_ratios")
     write_table(verification_frame, export_dir, f"{safe_name}_verification")

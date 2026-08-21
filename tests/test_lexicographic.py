@@ -3,7 +3,6 @@ from pathlib import Path
 from appliedmath_lexflow.io import load_benchmark
 from appliedmath_lexflow.lexicographic import solve_three_stage
 
-
 DATA = Path(__file__).resolve().parents[1] / "Data" / "benchmarks"
 
 

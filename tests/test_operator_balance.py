@@ -4,7 +4,6 @@ from appliedmath_lexflow.examples import load_all_benchmarks
 from appliedmath_lexflow.stage1 import solve_stage1_closed_form
 from appliedmath_lexflow.verification import verify_operator_exact
 
-
 DATA = Path(__file__).resolve().parents[1] / "Data" / "benchmarks"
 
 

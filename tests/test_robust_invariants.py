@@ -8,6 +8,7 @@ These lock in the two defects fixed in the Results block:
   non-reproducible "46.7% reduction" as if it were an invariant.
 """
 
+from dataclasses import replace
 from fractions import Fraction
 from pathlib import Path
 
@@ -59,7 +60,9 @@ def test_temporal_variation_bounds_are_invariant() -> None:
     # so it is not a well-defined result on its own.
     assert bounds.omega_min - 1e-9 <= solution.stage2.temporal_variation <= bounds.omega_max + 1e-9
     assert bounds.omega_max > solution.stage2.temporal_variation + 1e-6
-    assert abs(bounds.reduction_fraction - (0.65 / 1.05)) <= 1e-9
+    # This is the worst-to-best range reduction, not a guaranteed reduction
+    # from an arbitrary Stage-2 solution (which may already attain Omega_min).
+    assert abs(bounds.worst_to_best_reduction_fraction - (0.65 / 1.05)) <= 1e-9
 
 
 def test_leximin_is_unique_and_smooth() -> None:
@@ -99,3 +102,19 @@ def test_price_of_fairness_branching() -> None:
     pof = price_of_fairness(load_benchmark(DATA / "branching_shared_edge_bottleneck.json"))
     assert pof.efficiency_optimum >= pof.fair_delivery
     assert 0.011 <= pof.price_of_fairness <= 0.013
+
+
+def test_price_of_fairness_uses_the_same_nonuniform_weights() -> None:
+    """Both PoF optimisations must use the declared Stage-2 objective."""
+    model = load_benchmark(DATA / "temporal_lexicographic.json")
+    weighted_model = replace(
+        model,
+        users=(
+            replace(model.users[0], weight=Fraction(2)),
+            replace(model.users[1], weight=Fraction(1)),
+        ),
+    )
+    pof = price_of_fairness(weighted_model)
+    assert abs(pof.efficiency_optimum - 38.0) <= 1e-9
+    assert abs(pof.fair_delivery - 35.6) <= 1e-9
+    assert abs(pof.price_of_fairness - (1.0 - 35.6 / 38.0)) <= 1e-9

@@ -5,7 +5,8 @@ import json
 import platform
 import shutil
 import sys
-from datetime import datetime, timezone
+from dataclasses import replace
+from datetime import UTC, datetime
 from fractions import Fraction
 from pathlib import Path
 
@@ -36,6 +37,7 @@ from .robust import (
     solve_leximin,
     stage2_variation_bounds,
 )
+from .scales import verify_scale_suite
 from .stage1 import solve_stage1_closed_form, solve_stage1_lp
 from .tables import write_table
 from .verification import maximum_physical_violation, verify_operator_exact
@@ -61,8 +63,8 @@ def _reset_generated_directories(output_root: Path) -> list[str]:
     """Remove all previously generated assets before producing a fresh result package.
 
     ``gui_exports`` (ad hoc single-benchmark CSV exports from the desktop app)
-    is preserved across regenerations; everything else, including any
-    per-benchmark result folders from a previous run, is cleared.
+    and the separately generated maximum scale package are preserved across
+    regenerations; everything else is cleared.
 
     An entry that cannot be removed (e.g. an image from a previous run is
     still open in a viewer, Explorer, or the IDE, which holds a Windows file
@@ -76,7 +78,7 @@ def _reset_generated_directories(output_root: Path) -> list[str]:
     locked: list[str] = []
     if output_root.exists():
         for entry in output_root.iterdir():
-            if entry.name == "gui_exports":
+            if entry.name in {"gui_exports", "synthetic_scale_500u_1022e_4p"}:
                 continue
             try:
                 if entry.is_dir():
@@ -106,7 +108,11 @@ def generate_results(project_root: str | Path) -> dict[str, object]:
     dimension_rows: list[dict[str, object]] = []
 
     maximum_node_residual = Fraction(0)
+    maximum_operator_difference = Fraction(0)
     maximum_physical_residual = 0.0
+    maximum_stage3_floor_violation = 0.0
+    maximum_stage3_satisfaction_error = 0.0
+    maximum_stage3_variation_excess = 0.0
 
     for model in models:
         closed = solve_stage1_closed_form(model)
@@ -123,8 +129,32 @@ def generate_results(project_root: str | Path) -> dict[str, object]:
         maximum_node_residual = max(
             maximum_node_residual, operator_check.maximum_node_residual
         )
+        maximum_operator_difference = max(
+            maximum_operator_difference,
+            operator_check.maximum_absolute_difference,
+        )
         maximum_physical_residual = max(
             maximum_physical_residual, physical_violation
+        )
+        lambda_star = float(closed.lambda_star)
+        maximum_stage3_floor_violation = max(
+            maximum_stage3_floor_violation,
+            max(0.0, lambda_star - solution.stage3.minimum_ratio),
+        )
+        maximum_stage3_satisfaction_error = max(
+            maximum_stage3_satisfaction_error,
+            abs(
+                solution.stage3.weighted_satisfaction
+                - solution.stage2.weighted_satisfaction
+            ),
+        )
+        maximum_stage3_variation_excess = max(
+            maximum_stage3_variation_excess,
+            max(
+                0.0,
+                solution.stage3.temporal_variation
+                - solution.stage2.temporal_variation,
+            ),
         )
 
         closed_rows.append(
@@ -219,47 +249,99 @@ def generate_results(project_root: str | Path) -> dict[str, object]:
                 "omega_max_exact": None
                 if bounds is None or bounds.omega_max_exact is None
                 else _fraction_string(bounds.omega_max_exact),
-                "invariant_reduction_fraction": None
+                "worst_to_best_reduction_fraction": None
                 if bounds is None
-                else bounds.reduction_fraction,
-                "efficiency_optimum_Z_eff": pof.efficiency_optimum,
-                "fair_delivery_Z_fair": pof.fair_delivery,
+                else bounds.worst_to_best_reduction_fraction,
+                "weighted_efficiency_optimum_Z_eff_w": pof.efficiency_optimum,
+                "weighted_fair_delivery_Z_fair_w": pof.fair_delivery,
                 "price_of_fairness": pof.price_of_fairness,
             }
         )
-        # Compute the leximin certificate for every benchmark. Small exact
-        # benchmarks solve at the default 1e-7 tolerance; large real-network
-        # instances (e.g. gone_abat_jap, 308 active records) need a relaxed
-        # feasibility tolerance because the loss-adjusted operator coefficients
-        # span several orders of magnitude. Size the tolerance by the instance
-        # and lift the max_records guard rather than skipping the row.
-        n_records = len(model.active_records)
-        lex_tol = 1e-6 if n_records > 64 else 1e-7
+        # The model-specific progressive-filling certificate is exact rational
+        # arithmetic, so the large adapted network needs no tolerance relaxation.
         try:
-            lex = solve_leximin(
-                model,
-                max_records=None,
-                feasibility_tolerance=lex_tol,
-                slack=lex_tol,
-            )
-        except RuntimeError as exc:
+            lex = solve_leximin(model, max_records=None)
+        except (RuntimeError, ValueError) as exc:
             leximin_rows.append(
                 {
                     "benchmark": model.name,
                     "leximin_minimum_ratio": None,
                     "leximin_weighted_satisfaction": None,
                     "leximin_temporal_variation": None,
-                    "leximin_levels": f"skipped: {exc}",
+                    "leximin_levels_rounded_6dp": f"skipped: {exc}",
                 }
             )
         else:
+            rounded_levels: list[str] = []
+            for value in lex.levels:
+                label = f"{value:.6f}"
+                if not rounded_levels or label != rounded_levels[-1]:
+                    rounded_levels.append(label)
             leximin_rows.append(
                 {
                     "benchmark": model.name,
                     "leximin_minimum_ratio": lex.minimum_ratio,
                     "leximin_weighted_satisfaction": lex.weighted_satisfaction,
                     "leximin_temporal_variation": lex.temporal_variation,
-                    "leximin_levels": "; ".join(f"{value:.6f}" for value in lex.levels),
+                    "leximin_levels_rounded_6dp": "; ".join(rounded_levels),
+                }
+            )
+
+    scale_rows = []
+    for row in verify_scale_suite():
+        scale_rows.append(
+            {
+                "users": row.users,
+                "nodes": row.nodes,
+                "edges": row.edges,
+                "periods": row.periods,
+                "active_records": row.active_records,
+                "principal_inequalities": row.principal_inequalities,
+                "lambda_closed_form_exact": _fraction_string(row.lambda_closed_form),
+                "lambda_closed_form": float(row.lambda_closed_form),
+                "lambda_lp": row.lambda_lp,
+                "absolute_difference": row.absolute_difference,
+                "active_resources": "; ".join(row.active_resources),
+            }
+        )
+
+    temporal_model = next(
+        model for model, _ in solved if model.name == "temporal_lexicographic"
+    )
+    weight_rows = []
+    weight_cases = (
+        (Fraction(1), Fraction(1)),
+        (Fraction(2), Fraction(1)),
+        (Fraction(1), Fraction(2)),
+    )
+    if len(temporal_model.users) == 2:
+        for left_weight, right_weight in weight_cases:
+            weighted_model = replace(
+                temporal_model,
+                users=(
+                    replace(temporal_model.users[0], weight=left_weight),
+                    replace(temporal_model.users[1], weight=right_weight),
+                ),
+            )
+            weighted_solution = solve_three_stage(weighted_model)
+            seasonal_delivery = {
+                user.user_id: sum(
+                    float(weighted_model.demand[period][user.user_id])
+                    * weighted_solution.stage2.ratios[(period, user.user_id)]
+                    for period in weighted_model.periods
+                )
+                for user in weighted_model.users
+            }
+            weight_rows.append(
+                {
+                    "weight_user_1": float(left_weight),
+                    "weight_user_2": float(right_weight),
+                    "lambda_star": float(weighted_solution.lambda_closed_form),
+                    "stage2_weighted_satisfaction": weighted_solution.stage2.weighted_satisfaction,
+                    "stage2_user_1_seasonal_delivery": seasonal_delivery[weighted_model.users[0].user_id],
+                    "stage2_user_2_seasonal_delivery": seasonal_delivery[weighted_model.users[1].user_id],
+                    "stage2_temporal_variation": weighted_solution.stage2.temporal_variation,
+                    "stage3_temporal_variation": weighted_solution.stage3.temporal_variation,
                 }
             )
 
@@ -270,6 +352,8 @@ def generate_results(project_root: str | Path) -> dict[str, object]:
         "table_4_formulation_dimensions": pd.DataFrame(dimension_rows),
         "table_5_invariant_variation_and_price_of_fairness": pd.DataFrame(invariant_rows),
         "table_6_leximin_allocation": pd.DataFrame(leximin_rows),
+        "table_7_scale_verification": pd.DataFrame(scale_rows),
+        "table_8_weight_sensitivity": pd.DataFrame(weight_rows),
     }
     for stem, dataframe in tables.items():
         write_table(dataframe, table_dir, stem)
@@ -316,25 +400,44 @@ def generate_results(project_root: str | Path) -> dict[str, object]:
     # the solver happened to return (0.75 here, but 1.05 at other vertices of the
     # same optimal face), giving a non-reproducible "46.7%". We instead report
     # the range over the whole Stage-2 optimal face: Omega_max (worst any solver
-    # could show) down to Omega_min = the Stage-3 optimum, and the guaranteed
-    # reduction (Omega_max - Omega_min) / Omega_max.
+    # could show) down to Omega_min = the Stage-3 optimum, and the
+    # worst-to-best range reduction (Omega_max - Omega_min) / Omega_max. This is
+    # not a guaranteed reduction from an arbitrary Stage-2 solution: that
+    # solution may already attain Omega_min.
     temporal_bounds = stage2_variation_bounds(temporal_model)
     temporal_leximin = solve_leximin(temporal_model)
+    scale_max_difference = max(row["absolute_difference"] for row in scale_rows)
+    tolerance = 5e-7
+    gates = {
+        "closed_form_lp_agreement": closed_form_max_difference <= tolerance,
+        "scale_closed_form_lp_agreement": scale_max_difference <= tolerance,
+        "operator_balance_exact": maximum_operator_difference == 0,
+        "node_balance_exact": maximum_node_residual == 0,
+        "stage3_physical_feasibility": maximum_physical_residual <= tolerance,
+        "stage3_floor_preserved": maximum_stage3_floor_violation <= tolerance,
+        "stage3_satisfaction_preserved": maximum_stage3_satisfaction_error <= 1e-8,
+        "stage3_variation_not_increased": maximum_stage3_variation_excess <= tolerance,
+    }
+    verification_status = "PASS" if all(gates.values()) else "FAIL"
     summary = {
         "benchmark_count": len(models),
         "closed_form_max_difference": closed_form_max_difference,
-        "operator_exact_max_difference": "0",
+        "operator_exact_max_difference": _fraction_string(maximum_operator_difference),
         "node_exact_max_residual": _fraction_string(maximum_node_residual),
         "max_stage3_physical_violation": maximum_physical_residual,
         "temporal_omega_min": None if temporal_bounds is None else temporal_bounds.omega_min,
         "temporal_omega_max": None if temporal_bounds is None else temporal_bounds.omega_max,
-        "temporal_variation_reduction_fraction_invariant": (
-            None if temporal_bounds is None else temporal_bounds.reduction_fraction
+        "temporal_worst_to_best_reduction_fraction": (
+            None
+            if temporal_bounds is None
+            else temporal_bounds.worst_to_best_reduction_fraction
         ),
         "temporal_stage2_variation_solver_vertex": temporal_solution.stage2.temporal_variation,
         "temporal_stage3_variation": temporal_solution.stage3.temporal_variation,
         "temporal_leximin_variation": temporal_leximin.temporal_variation,
-        "verification_status": "PASS",
+        "scale_closed_form_max_difference": scale_max_difference,
+        "verification_gates": gates,
+        "verification_status": verification_status,
         "manifest": "results/manifests/run_manifest.json",
         "figure_warnings": figure_warnings,
     }
@@ -344,10 +447,10 @@ def generate_results(project_root: str | Path) -> dict[str, object]:
     )
 
     manifest = {
-        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+        "generated_at_utc": datetime.now(UTC).isoformat(),
         "project": "AppliedMath deterministic lexicographic tree-flow article",
         "model_boundary": (
-            "deterministic rooted trees; no stochastic, scenario, or robust optimization"
+            "deterministic rooted trees; no scenario-indexed, stochastic, or robust optimization"
         ),
         "command": "python run_analysis.py",
         "python": sys.version,
@@ -362,12 +465,15 @@ def generate_results(project_root: str | Path) -> dict[str, object]:
         "acceptance_gates": {
             "closed_form_lp_tolerance": 5e-7,
             "closed_form_lp_max_difference": closed_form_max_difference,
-            "exact_operator_balance_difference": "0",
+            "scale_closed_form_lp_max_difference": scale_max_difference,
+            "exact_operator_balance_difference": _fraction_string(maximum_operator_difference),
             "exact_node_residual": _fraction_string(maximum_node_residual),
             "max_stage3_physical_violation": maximum_physical_residual,
-            "stage3_preserves_stage2_within_numerical_tolerance": True,
-            "stage3_temporal_variation_not_greater_than_stage2": True,
-            "overall_status": "PASS",
+            "max_stage3_floor_violation": maximum_stage3_floor_violation,
+            "max_stage3_satisfaction_error": maximum_stage3_satisfaction_error,
+            "max_stage3_variation_excess": maximum_stage3_variation_excess,
+            **gates,
+            "overall_status": verification_status,
         },
         "benchmark_hashes": {
             path.name: _hash_file(path) for path in sorted(data_dir.glob("*.json"))

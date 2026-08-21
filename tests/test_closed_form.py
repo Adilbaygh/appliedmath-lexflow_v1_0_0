@@ -3,7 +3,6 @@ from pathlib import Path
 from appliedmath_lexflow.examples import load_all_benchmarks
 from appliedmath_lexflow.stage1 import solve_stage1_closed_form, solve_stage1_lp
 
-
 DATA = Path(__file__).resolve().parents[1] / "Data" / "benchmarks"
 
 

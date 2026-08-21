@@ -100,7 +100,6 @@ def solve_three_stage(
     record_index = {record: idx for idx, record in enumerate(records)}
     physical_a, physical_b, _ = physical_matrices(model)
     weighted = weighted_coefficients(model, records)
-    total_weighted_demand = float(weighted.sum())
 
     canonical_ratios = {record: lambda_star for record in records}
     stage1 = _make_solution(
@@ -202,8 +201,14 @@ def solve_three_stage(
         raise AssertionError("Closed-form and LP Stage-1 values disagree.")
     if stage3.minimum_ratio + 5e-7 < lambda_star:
         raise AssertionError("Stage 3 violates the Stage-1 floor.")
-    if stage3.weighted_satisfaction + 5e-7 < stage2.weighted_satisfaction:
-        raise AssertionError("Stage 3 fails to preserve Stage-2 satisfaction.")
+    if (
+        abs(stage3.weighted_satisfaction - stage2.weighted_satisfaction)
+        > preservation_tolerance
+    ):
+        raise AssertionError(
+            "Stage 3 fails to preserve the Stage-2 optimum within the "
+            "declared numerical tolerance."
+        )
     if stage3.temporal_variation > stage2.temporal_variation + 5e-7:
         raise AssertionError("Stage 3 increases temporal variation.")
 

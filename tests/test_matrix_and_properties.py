@@ -7,7 +7,6 @@ from appliedmath_lexflow.examples import load_all_benchmarks
 from appliedmath_lexflow.operators import build_operator_exact, matrix_operator
 from appliedmath_lexflow.stage1 import solve_stage1_closed_form
 
-
 DATA = Path(__file__).resolve().parents[1] / "Data" / "benchmarks"
 
 

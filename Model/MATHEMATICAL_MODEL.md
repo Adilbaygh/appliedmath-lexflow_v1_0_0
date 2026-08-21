@@ -144,7 +144,7 @@ $$
 
 ## 8. Stage 3: exact lexicographic temporal selector
 
-For consecutive active records,
+For adjacent planning periods for which both service records are active,
 
 $$
 \Omega(r)=\sum_{(k,f)\in\mathcal J}|r_{kf}-r_{k-1,f}|.

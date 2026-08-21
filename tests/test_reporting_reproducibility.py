@@ -6,7 +6,6 @@ from pathlib import Path
 
 from appliedmath_lexflow.reporting import generate_results
 
-
 SOURCE_DATA = Path(__file__).resolve().parents[1] / "Data" / "benchmarks"
 
 

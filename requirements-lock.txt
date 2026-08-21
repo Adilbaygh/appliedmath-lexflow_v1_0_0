@@ -1,7 +1,8 @@
-# Reproducible versions used to generate the initial article assets.
-matplotlib==3.10.8
+# Reproducible versions used to generate the v0.4.0 article assets.
+matplotlib==3.11.1
 networkx==3.6.1
-numpy==2.3.5
-pandas==2.2.3
-scipy==1.17.0
-pytest==9.0.2
+numpy==2.5.2
+openpyxl==3.1.5
+pandas==3.0.5
+scipy==1.18.0
+pytest==9.1.1

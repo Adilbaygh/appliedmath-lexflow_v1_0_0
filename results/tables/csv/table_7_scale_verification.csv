@@ -1,0 +1,6 @@
+users,nodes,edges,periods,active_records,principal_inequalities,lambda_closed_form_exact,lambda_closed_form,lambda_lp,absolute_difference,active_resources
+20,63,62,4,80,332,3/5,0.6,0.6,0.0,source:k4
+50,127,126,4,200,708,3/5,0.6,0.6000000000000001,1.1102230246251565e-16,source:k4
+100,255,254,4,400,1420,3/5,0.6,0.5999999999999998,2.220446049250313e-16,source:k4
+250,511,510,4,1000,3044,3/5,0.6,0.6,0.0,source:k4
+500,1023,1022,4,2000,6092,3/5,0.6,0.6000000000000001,1.1102230246251565e-16,source:k4
