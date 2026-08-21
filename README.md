@@ -112,7 +112,7 @@ Run the tests:
 python -m pytest -p no:cacheprovider
 ```
 
-The current release passes 22 automated tests. Across six deterministic
+The current release passes 24 automated tests. Across six deterministic
 benchmarks, the maximum closed-form/LP difference is approximately `1.11e-16`;
 exact operator–balance and node-balance residuals are zero. All five generated
 scale instances (up to 500 users, 1022 edges, four periods, and 2000 active
@@ -126,9 +126,9 @@ guarantee from every Stage-2 optimum.
 ## Public software release
 
 The public repository contains the code, model documentation, benchmark data,
-tests, compact source tables, and reproducibility metadata. Version `0.4.0` is
+tests, compact source tables, and reproducibility metadata. Version `0.4.1` is
 identified by the tagged GitHub release
-[`v0.4.0`](https://github.com/Adilbaygh/appliedmath-lexflow_v1_0_0/releases/tag/v0.4.0).
+[`v0.4.1`](https://github.com/Adilbaygh/appliedmath-lexflow_v1_0_0/releases/tag/v0.4.1).
 The private Uzbek manuscript, licensed journal template, local review files,
 and Mendeley upload workspace remain outside this public repository and outside
 the curated public software archive. When Mendeley assigns the archive DOI, add

@@ -5,7 +5,7 @@
 Let all path coefficients, source coefficients, and demands be nonnegative. Let route assignments be fixed, and assume that the model contains no discrete activation, minimum-delivery, storage, or other inter-period coupling constraints. Then the Stage-1 optimum is
 
 $$
-\lambda^*=\min\left\lbrace
+\lambda^{\ast}=\min\left\lbrace
 1,
 \min_{k:L_k^s>0}\frac{Q_k}{L_k^s},
 \min_{k,e:L_{ke}^e>0}\frac{C_{ke}}{L_{ke}^e}
@@ -28,7 +28,7 @@ $$
 
 so every positive-load edge implies $\lambda\le C_{ke}/L_{ke}^e$. The upper bounds $r_{kf}\le1$ also imply $\lambda\le1$. Hence every feasible $\lambda$ is no larger than the stated minimum.
 
-Conversely, set all active ratios equal to that minimum. Each source load becomes $\lambda^*L_k^s\le Q_k$, each edge load becomes $\lambda^*L_{ke}^e\le C_{ke}$, and $0\le\lambda^*\le1$. Thus the common-ratio vector is feasible, so the upper bound is attained. $\square$
+Conversely, set all active ratios equal to that minimum. Each source load becomes $\lambda^{\ast}L_k^s\le Q_k$, each edge load becomes $\lambda^{\ast}L_{ke}^e\le C_{ke}$, and $0\le\lambda^{\ast}\le1$. Thus the common-ratio vector is feasible, so the upper bound is attained. $\square$
 
 ## Theorem 2. Operator-balance equivalence and unique gross flows
 
@@ -75,10 +75,10 @@ by $\eta_{k e_v}$ appends the factor $\eta_{k e_v}^{-1}$ to every downstream pat
 Let the positive-load resources be indexed by $j$, with normalized capacities $\xi_j=c_j/L_j$. Then
 
 $$
-\lambda^*(\xi)=\min\lbrace1,\xi_1,\ldots,\xi_m\rbrace.
+\lambda^{\ast}(\xi)=\min\lbrace1,\xi_1,\ldots,\xi_m\rbrace.
 $$
 
-Consequently, $\lambda^*$ is componentwise nondecreasing, continuous, concave, and piecewise linear. Nondifferentiability occurs only at bottleneck-switch surfaces where two or more active affine pieces coincide.
+Consequently, $\lambda^{\ast}$ is componentwise nondecreasing, continuous, concave, and piecewise linear. Nondifferentiability occurs only at bottleneck-switch surfaces where two or more active affine pieces coincide.
 
 ## Corollary 1. Stage-2 Pareto efficiency
 

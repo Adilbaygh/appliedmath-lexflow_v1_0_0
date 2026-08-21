@@ -22,7 +22,7 @@ $$
 
 ## E2. Operator-balance equivalence
 
-Set the canonical Stage-1 vector $r_{kf}=\lambda^*$. Compute gross flows by:
+Set the canonical Stage-1 vector $r_{kf}=\lambda^{\ast}$. Compute gross flows by:
 
 1. path-product graph operator;
 2. reverse-topological node-balance recursion.
@@ -34,13 +34,13 @@ Require exact rational equality for every edge-period pair and exact zero node r
 For all instances, solve all three stages and verify:
 
 $$
-\min r^{(2)}\ge\lambda^*,
+\min r^{(2)}\ge\lambda^{\ast},
 \qquad
-\min r^{(3)}\ge\lambda^*,
+\min r^{(3)}\ge\lambda^{\ast},
 $$
 
 $$
-S(r^{(3)})\ge S(r^{(2)})-\tau,
+\left|S(r^{(3)})-S(r^{(2)})\right|\le\tau,
 $$
 
 $$
@@ -64,7 +64,7 @@ invariant property.
 
 Generate complete binary trees for $F\in\{20,50,100,250,500\}$ with
 $P=2^{\lceil\log_2F\rceil}$ leaves. Require the exact node-balance evaluation
-and a path-sparse HiGHS Stage-1 LP to return $\lambda^*=3/5$ within
+and a path-sparse HiGHS Stage-1 LP to return $\lambda^{\ast}=3/5$ within
 $5\times10^{-7}$ for every size.
 
 ## E6. Reproducibility

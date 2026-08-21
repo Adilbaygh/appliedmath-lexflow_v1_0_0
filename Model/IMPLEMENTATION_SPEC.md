@@ -34,7 +34,7 @@ SciPy HiGHS solves the three LP stages. The numerical layer must be checked agai
 5. exact node residual equals zero;
 6. $|\lambda^{\mathrm{LP}}-\lambda^{\mathrm{cf}}|\le5\times10^{-7}$;
 7. no positive physical-constraint violation above $5\times10^{-7}$;
-8. Stage-3 minimum ratio preserves $\lambda^*$;
+8. Stage-3 minimum ratio preserves $\lambda^{\ast}$;
 9. Stage-3 weighted satisfaction preserves the Stage-2 optimum within declared floating tolerance;
 10. Stage-3 temporal variation does not exceed Stage-2 variation.
 11. the Stage-2 objective is preserved in both directions within the declared

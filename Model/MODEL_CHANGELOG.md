@@ -1,5 +1,19 @@
 # Model development log
 
+## v0.4.1
+
+- all optimal-value stars use GitHub MathJax-safe `\ast` notation;
+- the experiment protocol now checks Stage-2 objective preservation with the
+  same two-sided absolute residual used by the implementation;
+- the stale reference to a private Word manuscript was removed from the public
+  model index;
+- a regression gate now checks Markdown math delimiters, braces, raw asterisks,
+  fenced blocks, and internal links;
+- the pinned dependency record now matches the environment recorded in the run
+  manifest, which now also records the Excel writer version;
+- release-version, author, dependency, and documentation metadata are checked
+  automatically for cross-file consistency.
+
 ## v0.4.0
 
 - Stage-2 variation reporting was corrected: $61.9\%$ is now labelled the

@@ -56,4 +56,4 @@ def test_gui_translation_catalog_supports_both_languages() -> None:
     assert SUPPORTED_LANGUAGES == ("uz", "en")
     assert tr("ready", "uz") == "Тайёр"
     assert tr("ready", "en") == "Ready"
-    assert "v0.4.0" in tr("footer", "en")
+    assert "v0.4.1" in tr("footer", "en")

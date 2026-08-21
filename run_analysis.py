@@ -16,7 +16,6 @@ if str(SRC_DIR) not in sys.path:
 
 from appliedmath_lexflow.reporting import generate_results
 
-
 if __name__ == "__main__":
     summary = generate_results(PROJECT_ROOT)
     print("AppliedMath article assets generated successfully.")

@@ -15,6 +15,5 @@ if str(SRC_DIR) not in sys.path:
 
 from appliedmath_lexflow.desktop_gui import main
 
-
 if __name__ == "__main__":
     raise SystemExit(main(PROJECT_ROOT))

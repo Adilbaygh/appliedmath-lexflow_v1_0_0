@@ -76,7 +76,7 @@ _TEXT: Final[dict[str, dict[str, str]]] = {
         "h_path": "Нисбий йўл",
         "h_size": "Ҳажм",
         "h_modified": "Ўзгартирилган вақт",
-        "footer": "AppliedMath v0.4.0 · детерминистик модель · Ўзбекча / English",
+        "footer": "AppliedMath v0.4.1 · детерминистик модель · Ўзбекча / English",
         "busy": "Бошқа вазифа бажарилмоқда.",
         "dialog_open": "Тармоқ очиш",
         "all_files": "Барча файллар",
@@ -117,7 +117,7 @@ _TEXT: Final[dict[str, dict[str, str]]] = {
         "boundary_title": "Модель чегараси",
         "boundary_message": "Ушбу desktop GUI аниқ параметрларга эга детерминистик rooted-tree benchmark’ларни ечади. Сценарийли, стохастик ва робаст оптималлаштириш ишлатилмайди. Натижалар математик верификацияга тегишли бўлиб, дала валидацияси ёки муайян канал тизимининг эксплуатацион баҳоси эмас.",
         "about_title": "Дастур ҳақида",
-        "about_message": "AppliedMath LexFlow Desktop v0.4.0\n\n1-босқич: max–min адолат ва ёпиқ ечим.\n2-босқич: вазнланган мавсумий қониқиш.\n3-босқич: вақт бўйича тақсимот вариациясини минималлаштириш.\n\nGUI ва CLI бир хил appliedmath_lexflow solver пакетидан фойдаланади.",
+        "about_message": "AppliedMath LexFlow Desktop v0.4.1\n\n1-босқич: max–min адолат ва ёпиқ ечим.\n2-босқич: вазнланган мавсумий қониқиш.\n3-босқич: вақт бўйича тақсимот вариациясини минималлаштириш.\n\nGUI ва CLI бир хил appliedmath_lexflow solver пакетидан фойдаланади.",
         "project_log": "Лойиҳа папкаси: {path}",
         "boundary_log": "Модель чегараси: фақат детерминистик rooted-tree benchmark’лар.",
     },
@@ -188,7 +188,7 @@ _TEXT: Final[dict[str, dict[str, str]]] = {
         "h_path": "Relative Path",
         "h_size": "Size",
         "h_modified": "Modified",
-        "footer": "AppliedMath v0.4.0 · deterministic model · Uzbek / English",
+        "footer": "AppliedMath v0.4.1 · deterministic model · Uzbek / English",
         "busy": "Another task is already running.",
         "dialog_open": "Open Network",
         "all_files": "All files",
@@ -229,7 +229,7 @@ _TEXT: Final[dict[str, dict[str, str]]] = {
         "boundary_title": "Model Boundary",
         "boundary_message": "This desktop GUI solves deterministic rooted-tree benchmarks with known parameters. It does not use scenario-based, stochastic, or robust optimization. The results are mathematical verification evidence, not field validation or an operational assessment of a specific canal system.",
         "about_title": "About",
-        "about_message": "AppliedMath LexFlow Desktop v0.4.0\n\nStage 1: max–min fairness and a closed-form solution.\nStage 2: weighted seasonal satisfaction.\nStage 3: minimization of temporal allocation variation.\n\nThe GUI and CLI use the same appliedmath_lexflow solver package.",
+        "about_message": "AppliedMath LexFlow Desktop v0.4.1\n\nStage 1: max–min fairness and a closed-form solution.\nStage 2: weighted seasonal satisfaction.\nStage 3: minimization of temporal allocation variation.\n\nThe GUI and CLI use the same appliedmath_lexflow solver package.",
         "project_log": "Project folder: {path}",
         "boundary_log": "Model boundary: deterministic rooted-tree benchmarks only.",
     },
@@ -256,4 +256,3 @@ def tr(key: str, language: str = "uz", **values: object) -> str:
     except KeyError as exc:
         raise KeyError(f"Missing translation key {key!r} for {language!r}.") from exc
     return template.format(**values)
-

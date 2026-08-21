@@ -5,7 +5,15 @@ type: software
 authors:
   - family-names: Kudaybergenov
     given-names: Adilbay
-version: 0.4.0
+  - family-names: Kabulov
+    given-names: Anvar
+  - family-names: Kazimbetova
+    given-names: Mukhabbad
+  - family-names: Ametova
+    given-names: Gulsara
+  - family-names: Ispanova
+    given-names: Jadira
+version: 0.4.1
 date-released: 2026-08-21
 license: MIT
 repository-code: "https://github.com/Adilbaygh/appliedmath-lexflow_v1_0_0"

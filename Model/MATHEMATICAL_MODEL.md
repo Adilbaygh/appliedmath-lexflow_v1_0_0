@@ -117,7 +117,7 @@ $$
 Then
 
 $$
-\lambda^*=\min\left\lbrace 1,\ \min_{k:L_k^s>0}\frac{Q_k}{L_k^s},\ \min_{k,e:L_{ke}^e>0}\frac{C_{ke}}{L_{ke}^e} \right\rbrace.
+\lambda^{\ast}=\min\left\lbrace 1,\ \min_{k:L_k^s>0}\frac{Q_k}{L_k^s},\ \min_{k,e:L_{ke}^e>0}\frac{C_{ke}}{L_{ke}^e} \right\rbrace.
 $$
 
 ## 7. Stage 2: weighted seasonal satisfaction
@@ -139,7 +139,7 @@ $$
 subject to the physical constraints and the exact theoretical floor
 
 $$
-r_{kf}\ge\lambda^*.
+r_{kf}\ge\lambda^{\ast}.
 $$
 
 ## 8. Stage 3: exact lexicographic temporal selector
@@ -159,13 +159,13 @@ $$
 subject to the physical constraints,
 
 $$
-r_{kf}\ge\lambda^*,
+r_{kf}\ge\lambda^{\ast},
 $$
 
 and exact preservation of the Stage-2 optimum,
 
 $$
-S(r)=\theta^*.
+S(r)=\theta^{\ast}.
 $$
 
 In floating-point implementation, the equality is enforced within a declared numerical tolerance; the tolerance is not a model parameter.
@@ -176,7 +176,7 @@ In floating-point implementation, the equality is enforced within a declared num
 2. Stage 1 has the closed-form value stated above.
 3. The path operator and node-balance system are equivalent on a rooted tree.
 4. The induced edge-flow vector is unique for every delivery vector.
-5. $\lambda^*$ is componentwise nondecreasing in $Q$ and $C$.
-6. As a function of normalized capacities, $\lambda^*$ is continuous, concave, and piecewise linear.
+5. $\lambda^{\ast}$ is componentwise nondecreasing in $Q$ and $C$.
+6. As a function of normalized capacities, $\lambda^{\ast}$ is continuous, concave, and piecewise linear.
 7. With positive $w_f$, every Stage-2 optimum is Pareto efficient in seasonal delivered volumes.
 8. Stage 3 preserves Stage-1 and Stage-2 optimality while weakly reducing $\Omega$.

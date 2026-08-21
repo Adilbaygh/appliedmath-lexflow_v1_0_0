@@ -13,6 +13,7 @@ from pathlib import Path
 import matplotlib
 import networkx as nx
 import numpy as np
+import openpyxl
 import pandas as pd
 import scipy
 
@@ -459,6 +460,7 @@ def generate_results(project_root: str | Path) -> dict[str, object]:
             "matplotlib": matplotlib.__version__,
             "networkx": nx.__version__,
             "numpy": np.__version__,
+            "openpyxl": openpyxl.__version__,
             "pandas": pd.__version__,
             "scipy": scipy.__version__,
         },

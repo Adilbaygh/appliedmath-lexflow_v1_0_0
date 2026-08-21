@@ -14,8 +14,7 @@ SRC_DIR = PROJECT_ROOT / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
-from appliedmath_lexflow.app import main  # noqa: E402
-
+from appliedmath_lexflow.app import main
 
 if __name__ == "__main__":
     if "--project-root" not in sys.argv:
