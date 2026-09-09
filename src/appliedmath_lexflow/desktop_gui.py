@@ -12,9 +12,6 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import TypeVar
 
-import networkx as nx
-import numpy as np
-
 try:
     import tkinter as tk
     from tkinter import filedialog, messagebox, scrolledtext, ttk
@@ -44,6 +41,7 @@ from .desktop_backend import (
     users_with_activity,
     verification_rows,
 )
+from .figure_style import draw_tree, draw_user_profile, tree_layout
 from .i18n import LANGUAGE_NAMES, SUPPORTED_LANGUAGES, tr
 from .operators import build_graph
 
@@ -599,33 +597,19 @@ class LexFlowDesktopApp:
             return
         user = self.user_var.get()
         periods, stage1, stage2, stage3 = period_series(self.snapshot, user)
-        x = np.arange(len(periods))
-        self.allocation_ax.plot(x, stage1, marker="o", label=self._t("stage1"))
-        self.allocation_ax.plot(x, stage2, marker="s", label=self._t("stage2"))
-        self.allocation_ax.plot(x, stage3, marker="^", label=self._t("stage3"))
-        self.allocation_ax.set_xticks(x, periods)
-        self.allocation_ax.set_ylim(0.0, 1.05)
-        self.allocation_ax.set_xlabel(self._t("chart_xlabel"))
-        self.allocation_ax.set_ylabel(self._t("chart_ylabel"))
-        self.allocation_ax.set_title(self._t("chart_title", user=user))
-        self.allocation_ax.grid(True, alpha=0.3)
-        self.allocation_ax.legend(loc="best")
+        # Drawn by the same helper as results/<benchmark>/figures/profiles_by_user/,
+        # so the on-screen chart carries the article's stage colours and markers.
+        draw_user_profile(
+            self.allocation_ax,
+            list(range(len(periods))),
+            list(periods),
+            (stage1, stage2, stage3),
+            (self._t("stage1"), self._t("stage2"), self._t("stage3")),
+            xlabel=self._t("chart_xlabel"),
+            ylabel=self._t("chart_ylabel"),
+            title=self._t("chart_title", user=user),
+        )
         self.allocation_canvas.draw_idle()
-
-    @staticmethod
-    def _tree_positions(graph: nx.DiGraph, source: str) -> dict[str, tuple[float, float]]:
-        depth = nx.single_source_shortest_path_length(graph, source)
-        levels: dict[int, list[str]] = {}
-        for node in nx.topological_sort(graph):
-            levels.setdefault(depth[node], []).append(node)
-        positions: dict[str, tuple[float, float]] = {}
-        for level, nodes in sorted(levels.items()):
-            xs = np.linspace(0.08, 0.92, max(1, len(nodes)))
-            if len(nodes) == 1:
-                xs = np.asarray([0.5])
-            for x, node in zip(xs, nodes):
-                positions[node] = (float(x), float(-level))
-        return positions
 
     def _draw_network(self) -> None:
         self.network_ax.clear()
@@ -635,35 +619,12 @@ class LexFlowDesktopApp:
             return
         model = self.snapshot.model
         graph = build_graph(model)
-        if model.node_positions is not None:
-            # Use the real canal-system geometry when the benchmark ships one,
-            # instead of a generic depth-level layout that does not reflect
-            # the actual physical network.
-            positions = {node: model.node_positions[node] for node in graph.nodes}
-        else:
-            positions = self._tree_positions(graph, model.source)
-        node_sizes = [1000 if node == model.source else 760 for node in graph.nodes]
-        nx.draw_networkx_nodes(graph, positions, node_size=node_sizes, ax=self.network_ax)
-        nx.draw_networkx_labels(graph, positions, font_size=9, ax=self.network_ax)
-        nx.draw_networkx_edges(
-            graph,
-            positions,
-            arrows=True,
-            arrowsize=18,
-            width=1.4,
-            ax=self.network_ax,
-        )
-        edge_labels = {(edge.tail, edge.head): edge.edge_id for edge in model.edges}
-        nx.draw_networkx_edge_labels(
-            graph,
-            positions,
-            edge_labels=edge_labels,
-            font_size=8,
-            rotate=False,
-            ax=self.network_ax,
-        )
+        # Layout, node-role colours, reach colour and label typesetting all come
+        # from figure_style, which also produces Figure 1 of the article, so the
+        # network shown here is the published picture.
+        positions, _levels = tree_layout(model, graph)
+        draw_tree(model, graph, positions, self.network_ax)
         self.network_ax.set_title(self._t("network_title", name=model.name))
-        self.network_ax.axis("off")
         self.network_canvas.draw_idle()
 
     def save_current_benchmark_result(self) -> None:

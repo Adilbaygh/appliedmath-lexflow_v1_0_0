@@ -11,6 +11,19 @@
   drawn by one routine so that they share cell size, typography and a
   positive/negative colour code, and are labelled with node, edge and user
   identifiers instead of bare indices;
+- the colour code and the drawing primitives were moved into
+  `src/appliedmath_lexflow/figure_style.py`, which the reporting pipeline and
+  the desktop application now share: the network and the service-ratio profile
+  shown interactively by `main.py` carry the same node-role colours, stage
+  colours, markers, layout and mathematical labels as the published figures,
+  so an on-screen plot and the corresponding figure of the article cannot
+  diverge;
+- the pooled operator-versus-node-balance agreement figure now covers exactly
+  the benchmarks reported in the exact-verification table, that is, the
+  synthetic networks; the surveyed canal carries flows three orders of
+  magnitude larger and, pooled in, compressed every synthetic point into the
+  origin. The all-benchmark panel is still written, under
+  `figure_4_operator_balance_agreement_all_benchmarks`;
 - `bench/scale_timing.py` was added: it reports the wall-clock time and peak
   working memory of the closed-form Stage-1 evaluation against the equivalent
   sparse HiGHS Stage-1 LP over the Appendix A scaling generator, as the minimum

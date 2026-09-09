@@ -1,18 +1,27 @@
 from __future__ import annotations
 
-import re
 from collections.abc import Iterable
 from fractions import Fraction
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-import networkx as nx
 import numpy as np
 import pandas as pd
 from matplotlib.lines import Line2D
 from matplotlib.patches import Rectangle
 
 from .domain import Benchmark
+from .figure_style import (
+    GUARANTEE_COLOR,
+    NEGATIVE_COLOR,
+    POSITIVE_COLOR,
+    draw_tree,
+    draw_user_profile,
+    is_small_network,
+    math_label,
+    tree_layout,
+    user_colors,
+)
 from .lexicographic import ThreeStageSolution
 from .operators import (
     build_balance_matrices,
@@ -27,30 +36,11 @@ SINGLE_COLUMN = (3.5, 2.6)
 DOUBLE_COLUMN = (7.2, 4.3)
 _SOFTWARE_LABEL = "AppliedMath LexFlow 0.5.0"
 
-# Colour code shared by the matrix-pattern panels (Figures 6 and 7).
-_POSITIVE_COLOR = "#1f77b4"
-_NEGATIVE_COLOR = "#d62728"
-# Node roles in the rooted-tree figure (Figure 1).
-_SOURCE_COLOR = "#1f77b4"
-_JUNCTION_COLOR = "#8c8c8c"
-_TERMINAL_COLOR = "#2ca02c"
-
-_LABEL_PATTERN = re.compile(r"^([A-Za-z])(\d+)$")
-
-
-def _math_label(name: str) -> str:
-    """Render ``e12`` as ``$e_{12}$`` and ``s`` as ``$s$``.
-
-    Applied only to the small synthetic benchmarks, whose identifiers are
-    single letters with an optional index. Real canal networks carry
-    descriptive node names that must stay as plain text.
-    """
-    match = _LABEL_PATTERN.match(name)
-    if match is not None:
-        return f"${match.group(1)}_{{{match.group(2)}}}$"
-    if len(name) == 1 and name.isalpha():
-        return f"${name}$"
-    return name
+# The colour code itself lives in figure_style.py, which the desktop GUI shares,
+# so an interactively displayed plot matches the published figure exactly.
+_POSITIVE_COLOR = POSITIVE_COLOR
+_NEGATIVE_COLOR = NEGATIVE_COLOR
+_math_label = math_label
 
 
 def configure_matplotlib() -> None:
@@ -91,22 +81,7 @@ def _save(fig: plt.Figure, stem: str, output_root: Path) -> None:
 def plot_benchmark_tree(model: Benchmark, output_root: Path) -> None:
     """Render the rooted canal tree for one benchmark into its own output folder."""
     graph = build_graph(model)
-    levels = nx.single_source_shortest_path_length(graph, model.source)
-    if model.node_positions is not None:
-        # Use the real canal-system geometry when the benchmark ships one,
-        # instead of a generic depth-level layout that does not reflect the
-        # actual physical network.
-        positions = {node: model.node_positions[node] for node in graph.nodes}
-    else:
-        layer_nodes: dict[int, list[str]] = {}
-        for node, level in levels.items():
-            layer_nodes.setdefault(level, []).append(node)
-        positions = {}
-        for level, nodes in sorted(layer_nodes.items()):
-            count = len(nodes)
-            for idx, node in enumerate(sorted(nodes)):
-                x = (idx + 1) / (count + 1)
-                positions[node] = (x, -float(level))
+    positions, levels = tree_layout(model, graph)
 
     node_rows = [
         {
@@ -128,62 +103,10 @@ def plot_benchmark_tree(model: Benchmark, output_root: Path) -> None:
 
     # Larger trees need more canvas to stay legible; small benchmarks keep the
     # original journal double-column size.
-    small = len(model.nodes) <= 15
+    small = is_small_network(model)
     figsize = DOUBLE_COLUMN if small else (12.0, 6.5)
     fig, ax = plt.subplots(figsize=figsize)
-    node_size = 900 if small else 260
-    label_size = 8 if small else 6
-
-    terminals = {user.terminal for user in model.users}
-    colors = [
-        _SOURCE_COLOR
-        if node == model.source
-        else (_TERMINAL_COLOR if node in terminals else _JUNCTION_COLOR)
-        for node in graph.nodes
-    ]
-    nx.draw_networkx_nodes(
-        graph, positions, node_size=node_size, node_color=colors,
-        edgecolors="black", linewidths=0.6, ax=ax,
-    )
-    nx.draw_networkx_edges(
-        graph, positions, arrows=True, arrowsize=14, arrowstyle="-|>",
-        edge_color="#404040", width=1.3, ax=ax,
-    )
-    # Reviewer request: identifiers are typeset as mathematical symbols on the
-    # small benchmarks, where they denote the model variables of Section 2.
-    node_labels = {n: (_math_label(n) if small else n) for n in graph.nodes}
-    nx.draw_networkx_labels(
-        graph, positions, labels=node_labels, font_size=label_size,
-        font_color="white", ax=ax,
-    )
-    edge_labels = {
-        (edge.tail, edge.head): (_math_label(edge.edge_id) if small else edge.edge_id)
-        for edge in model.edges
-    }
-    nx.draw_networkx_edge_labels(
-        graph, positions, edge_labels=edge_labels, rotate=False,
-        font_size=max(label_size - 1, 5),
-        bbox={"facecolor": "white", "edgecolor": "none", "pad": 0.6}, ax=ax,
-    )
-    if small:
-        ax.legend(
-            handles=[
-                Line2D([], [], marker="o", linestyle="", markersize=7,
-                       markerfacecolor=_SOURCE_COLOR, markeredgecolor="black",
-                       label="source $s$"),
-                Line2D([], [], marker="o", linestyle="", markersize=7,
-                       markerfacecolor=_JUNCTION_COLOR, markeredgecolor="black",
-                       label="junction node"),
-                Line2D([], [], marker="o", linestyle="", markersize=7,
-                       markerfacecolor=_TERMINAL_COLOR, markeredgecolor="black",
-                       label="terminal offtake $t_f$"),
-                Line2D([], [], color="#404040", linewidth=1.3,
-                       label="directed reach $e_i$"),
-            ],
-            loc="upper left", frameon=False, fontsize=max(label_size - 1, 5),
-        )
-    ax.set_axis_off()
-    ax.margins(0.14, 0.12)
+    draw_tree(model, graph, positions, ax, small=small)
     _save(fig, "figure_1_tree", output_root)
 
 
@@ -280,10 +203,18 @@ def compute_operator_agreement_rows(
 
 
 def plot_operator_agreement_scatter(
-    data: pd.DataFrame, output_root: Path, *, title: str | None = None
+    data: pd.DataFrame,
+    output_root: Path,
+    *,
+    title: str | None = None,
+    stem: str = "figure_4_operator_balance_agreement",
 ) -> None:
-    """Render the node-balance-vs-operator-flow scatter for the given rows."""
-    write_table(data, output_root / "figure_data", "figure_4_operator_balance_agreement")
+    """Render the node-balance-vs-operator-flow scatter for the given rows.
+
+    ``stem`` names both the PNG and its source table, so several pooled
+    variants can coexist in one output folder.
+    """
+    write_table(data, output_root / "figure_data", stem)
 
     upper = max(
         float(data["operator_flow"].max()),
@@ -299,7 +230,7 @@ def plot_operator_agreement_scatter(
         ax.set_title(title)
     ax.legend(frameon=False)
     ax.grid(True, linewidth=0.4, alpha=0.5)
-    _save(fig, "figure_4_operator_balance_agreement", output_root)
+    _save(fig, stem, output_root)
 
 
 def plot_lexicographic_profiles(
@@ -345,8 +276,7 @@ def plot_lexicographic_profiles(
         return
 
     users = list(active)
-    cmap = plt.get_cmap("tab10" if len(users) <= 10 else "tab20")
-    colors = {user: cmap(idx % cmap.N) for idx, user in enumerate(users)}
+    colors = user_colors(users)
     ticks = list(period_index.values())
 
     if len(users) <= 6:
@@ -368,7 +298,7 @@ def plot_lexicographic_profiles(
                 label=f"{_math_label(user)}, Stage 3",
             )
         ax.axhline(
-            guarantee, linestyle=":", linewidth=1.0, color="black",
+            guarantee, linestyle=":", linewidth=1.0, color=GUARANTEE_COLOR,
             label=rf"guarantee $\lambda^*={guarantee:g}$",
         )
         ax.set_xlabel("Planning period")
@@ -389,7 +319,7 @@ def plot_lexicographic_profiles(
                 numbers, values, marker="o", markersize=2.6, linewidth=1.1,
                 color=colors[user], alpha=0.9,
             )
-        ax.axhline(guarantee, linestyle=":", linewidth=1.0, color="black")
+        ax.axhline(guarantee, linestyle=":", linewidth=1.0, color=GUARANTEE_COLOR)
         ax.set_title(title, fontsize=8.5)
         ax.set_xlabel("Planning period")
         ax.set_xticks(ticks, model.periods, fontsize=6.5)
@@ -405,7 +335,7 @@ def plot_lexicographic_profiles(
         for user in users
     ]
     handles.append(
-        Line2D([], [], color="black", linestyle=":", linewidth=1.0,
+        Line2D([], [], color=GUARANTEE_COLOR, linestyle=":", linewidth=1.0,
                label=rf"guarantee $\lambda^*={guarantee:g}$")
     )
     fig.legend(
@@ -450,16 +380,16 @@ def plot_lexicographic_profiles_per_user(
         stage3_values = [solution.stage3.ratios[(period, user)] for period in active_periods]
 
         fig, ax = plt.subplots(figsize=SINGLE_COLUMN)
-        ax.plot(period_numbers, stage1_values, marker="o", label="Stage 1")
-        ax.plot(period_numbers, stage2_values, marker="s", label="Stage 2")
-        ax.plot(period_numbers, stage3_values, marker="^", label="Stage 3")
-        ax.set_xticks(period_numbers, active_periods)
-        ax.set_ylim(0.0, 1.05)
-        ax.set_xlabel("Planning period")
-        ax.set_ylabel("Service ratio")
-        ax.set_title(f"{model.name} — {user}: lexicographic profile")
-        ax.grid(True, alpha=0.3)
-        ax.legend(loc="best")
+        draw_user_profile(
+            ax,
+            period_numbers,
+            active_periods,
+            (stage1_values, stage2_values, stage3_values),
+            ("Stage 1", "Stage 2", "Stage 3"),
+            xlabel="Planning period",
+            ylabel="Service ratio",
+            title=f"{model.name} — {user}: lexicographic profile",
+        )
         _save(fig, f"profiles_by_user/{user}", output_root)
 
 

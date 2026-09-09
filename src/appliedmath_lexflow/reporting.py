@@ -378,8 +378,25 @@ def generate_results(project_root: str | Path) -> dict[str, object]:
     plot_capacity_fairness(output_root)
     plot_bottleneck_regions(output_root)
     agreement_data = compute_operator_agreement_rows(solved)
+    # Figure 4 of the article pools exactly the benchmarks listed in Table 2,
+    # that is, the synthetic verification networks (the ones that carry no
+    # surveyed geometry). The real canal network is verified on its own, in its
+    # own folder and in the extra pooled panel written below: its flows are
+    # three orders of magnitude larger, so pooling it into Figure 4 would
+    # compress every synthetic point into the origin and hide the very
+    # agreement the figure is meant to show.
+    verification_names = {
+        model.name for model, _ in solved if model.node_positions is None
+    }
     plot_operator_agreement_scatter(
-        agreement_data, output_root, title="All benchmarks (pooled)"
+        agreement_data[agreement_data["benchmark"].isin(verification_names)],
+        output_root,
+    )
+    plot_operator_agreement_scatter(
+        agreement_data,
+        output_root,
+        title="All benchmarks (pooled)",
+        stem="figure_4_operator_balance_agreement_all_benchmarks",
     )
 
     # Every benchmark's own tree/profile/matrix/agreement figures and their
