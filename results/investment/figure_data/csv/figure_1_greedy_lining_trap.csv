@@ -1,0 +1,6 @@
+lining_decision,lined_edges,lambda_star,lambda_star_exact,gain
+none,,0.5,1/2,0.0
+single edge,e0,0.5,1/2,0.0
+single edge,e1,0.5,1/2,0.0
+single edge,e2,0.5,1/2,0.0
+joint (Algorithm 2),e1+e2,1.0,1,0.5

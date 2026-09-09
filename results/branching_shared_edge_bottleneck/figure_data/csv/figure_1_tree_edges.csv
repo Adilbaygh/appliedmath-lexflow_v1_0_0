@@ -1,0 +1,6 @@
+edge,tail,head
+e0,s,a
+e1,a,t1
+e2,a,b
+e3,b,t2
+e4,b,t3

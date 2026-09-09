@@ -1,0 +1,28 @@
+{
+  "paper": "Bottleneck-targeted rehabilitation planning (conference paper)",
+  "reference_instance": "gone_abat_jap",
+  "resources_m": 548,
+  "critical_resources": 18,
+  "lambda_star": 0.8499999999996504,
+  "exact_bottleneck_set": 1,
+  "near_tied_bottleneck_set_1e_9": 7,
+  "widening_only_full_service_cost": 1176720.9915744318,
+  "mixed_plan_savings": {
+    "0.90": 0.4419449155667411,
+    "0.92": 0.678484574249925,
+    "0.95": 1.0
+  },
+  "counterexample": {
+    "instance": "greedy_lining_trap",
+    "lambda_star_before": "1/2",
+    "lambda_star_after_joint_step": "1",
+    "single_edge_gain": 0.0,
+    "lined_edges": [
+      "e1",
+      "e2"
+    ],
+    "transversal_is_exact": true
+  },
+  "tables": 2,
+  "figures": 3
+}

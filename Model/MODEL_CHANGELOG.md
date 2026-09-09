@@ -1,5 +1,22 @@
 # Model development log
 
+## v0.5.0
+
+- the reporting figures were revised in response to peer review: the rooted-tree
+  figure now typesets identifiers as mathematical symbols, draws directed
+  reaches as arrows and colour-codes source, junction and terminal nodes; the
+  profile figure keeps coincident Stage-3 curves visible by decreasing the line
+  width from user to user and splits many-user benchmarks into a Stage-2 and a
+  Stage-3 panel with a full colour legend; the two matrix-pattern panels are
+  drawn by one routine so that they share cell size, typography and a
+  positive/negative colour code, and are labelled with node, edge and user
+  identifiers instead of bare indices;
+- `bench/scale_timing.py` was added: it reports the wall-clock time and peak
+  working memory of the closed-form Stage-1 evaluation against the equivalent
+  sparse HiGHS Stage-1 LP over the Appendix A scaling generator, as the minimum
+  over repeated runs after a warm-up;
+- release metadata was raised to v0.5.0 across the project files.
+
 ## v0.4.1
 
 - all optimal-value stars use GitHub MathJax-safe `\ast` notation;

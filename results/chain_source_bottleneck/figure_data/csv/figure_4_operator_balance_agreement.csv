@@ -1,0 +1,3 @@
+benchmark,period,edge,operator_flow,node_balance_flow,exact_difference
+chain_source_bottleneck,k1,e1,100.0,100.0,0
+chain_source_bottleneck,k1,e2,90.0,90.0,0

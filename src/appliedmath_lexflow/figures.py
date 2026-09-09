@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from collections.abc import Iterable
 from fractions import Fraction
 from pathlib import Path
@@ -8,6 +9,8 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 import pandas as pd
+from matplotlib.lines import Line2D
+from matplotlib.patches import Rectangle
 
 from .domain import Benchmark
 from .lexicographic import ThreeStageSolution
@@ -22,7 +25,32 @@ from .tables import write_table
 
 SINGLE_COLUMN = (3.5, 2.6)
 DOUBLE_COLUMN = (7.2, 4.3)
-_SOFTWARE_LABEL = "AppliedMath LexFlow 0.3.0"
+_SOFTWARE_LABEL = "AppliedMath LexFlow 0.5.0"
+
+# Colour code shared by the matrix-pattern panels (Figures 6 and 7).
+_POSITIVE_COLOR = "#1f77b4"
+_NEGATIVE_COLOR = "#d62728"
+# Node roles in the rooted-tree figure (Figure 1).
+_SOURCE_COLOR = "#1f77b4"
+_JUNCTION_COLOR = "#8c8c8c"
+_TERMINAL_COLOR = "#2ca02c"
+
+_LABEL_PATTERN = re.compile(r"^([A-Za-z])(\d+)$")
+
+
+def _math_label(name: str) -> str:
+    """Render ``e12`` as ``$e_{12}$`` and ``s`` as ``$s$``.
+
+    Applied only to the small synthetic benchmarks, whose identifiers are
+    single letters with an optional index. Real canal networks carry
+    descriptive node names that must stay as plain text.
+    """
+    match = _LABEL_PATTERN.match(name)
+    if match is not None:
+        return f"${match.group(1)}_{{{match.group(2)}}}$"
+    if len(name) == 1 and name.isalpha():
+        return f"${name}$"
+    return name
 
 
 def configure_matplotlib() -> None:
@@ -100,19 +128,62 @@ def plot_benchmark_tree(model: Benchmark, output_root: Path) -> None:
 
     # Larger trees need more canvas to stay legible; small benchmarks keep the
     # original journal double-column size.
-    figsize = DOUBLE_COLUMN if len(model.nodes) <= 15 else (12.0, 6.5)
+    small = len(model.nodes) <= 15
+    figsize = DOUBLE_COLUMN if small else (12.0, 6.5)
     fig, ax = plt.subplots(figsize=figsize)
-    node_size = 900 if len(model.nodes) <= 15 else 260
-    label_size = 8 if len(model.nodes) <= 15 else 6
-    nx.draw_networkx_nodes(graph, positions, node_size=node_size, ax=ax)
-    nx.draw_networkx_edges(graph, positions, arrows=True, arrowsize=14, ax=ax)
-    nx.draw_networkx_labels(graph, positions, font_size=label_size, ax=ax)
-    edge_labels = {(edge.tail, edge.head): edge.edge_id for edge in model.edges}
-    nx.draw_networkx_edge_labels(
-        graph, positions, edge_labels=edge_labels, font_size=max(label_size - 1, 5), ax=ax
+    node_size = 900 if small else 260
+    label_size = 8 if small else 6
+
+    terminals = {user.terminal for user in model.users}
+    colors = [
+        _SOURCE_COLOR
+        if node == model.source
+        else (_TERMINAL_COLOR if node in terminals else _JUNCTION_COLOR)
+        for node in graph.nodes
+    ]
+    nx.draw_networkx_nodes(
+        graph, positions, node_size=node_size, node_color=colors,
+        edgecolors="black", linewidths=0.6, ax=ax,
     )
-    ax.set_title(f"{model.name}: rooted canal tree")
+    nx.draw_networkx_edges(
+        graph, positions, arrows=True, arrowsize=14, arrowstyle="-|>",
+        edge_color="#404040", width=1.3, ax=ax,
+    )
+    # Reviewer request: identifiers are typeset as mathematical symbols on the
+    # small benchmarks, where they denote the model variables of Section 2.
+    node_labels = {n: (_math_label(n) if small else n) for n in graph.nodes}
+    nx.draw_networkx_labels(
+        graph, positions, labels=node_labels, font_size=label_size,
+        font_color="white", ax=ax,
+    )
+    edge_labels = {
+        (edge.tail, edge.head): (_math_label(edge.edge_id) if small else edge.edge_id)
+        for edge in model.edges
+    }
+    nx.draw_networkx_edge_labels(
+        graph, positions, edge_labels=edge_labels, rotate=False,
+        font_size=max(label_size - 1, 5),
+        bbox={"facecolor": "white", "edgecolor": "none", "pad": 0.6}, ax=ax,
+    )
+    if small:
+        ax.legend(
+            handles=[
+                Line2D([], [], marker="o", linestyle="", markersize=7,
+                       markerfacecolor=_SOURCE_COLOR, markeredgecolor="black",
+                       label="source $s$"),
+                Line2D([], [], marker="o", linestyle="", markersize=7,
+                       markerfacecolor=_JUNCTION_COLOR, markeredgecolor="black",
+                       label="junction node"),
+                Line2D([], [], marker="o", linestyle="", markersize=7,
+                       markerfacecolor=_TERMINAL_COLOR, markeredgecolor="black",
+                       label="terminal offtake $t_f$"),
+                Line2D([], [], color="#404040", linewidth=1.3,
+                       label="directed reach $e_i$"),
+            ],
+            loc="upper left", frameon=False, fontsize=max(label_size - 1, 5),
+        )
     ax.set_axis_off()
+    ax.margins(0.14, 0.12)
     _save(fig, "figure_1_tree", output_root)
 
 
@@ -234,62 +305,113 @@ def plot_operator_agreement_scatter(
 def plot_lexicographic_profiles(
     model: Benchmark, solution: ThreeStageSolution, output_root: Path
 ) -> None:
-    """Render Stage-2 vs. Stage-3 service-ratio profiles for one benchmark."""
+    """Render Stage-2 vs. Stage-3 service-ratio profiles for one benchmark.
+
+    Two layouts are used. Benchmarks with a handful of users are drawn on one
+    axis, with Stage 2 dashed and Stage 3 solid; Stage-3 line widths decrease
+    from user to user so that profiles which coincide exactly (Stage 3 often
+    assigns the *same* vector to several users) all remain visible instead of
+    the last one hiding the others. Benchmarks with many users are drawn as two
+    panels, Stage 2 and Stage 3 side by side, with one colour legend naming
+    every service block.
+    """
     rows: list[dict[str, float | str]] = []
     period_index = {period: idx + 1 for idx, period in enumerate(model.periods)}
-    fig, ax = plt.subplots(figsize=DOUBLE_COLUMN)
+    guarantee = float(solution.lambda_closed_form)
+
+    active: dict[str, tuple[list[int], list[float], list[float]]] = {}
     for user in model.user_ids:
         # Periods with zero demand for this user are excluded from the
         # optimization records entirely (no ratio is defined), so only plot
         # the periods where the user actually has an active record.
-        active_periods = [
+        periods = [
             period for period in model.periods if (period, user) in solution.stage2.ratios
         ]
-        if not active_periods:
+        if not periods:
             continue
-        active_numbers = [period_index[period] for period in active_periods]
-        stage2_values = [solution.stage2.ratios[(period, user)] for period in active_periods]
-        stage3_values = [solution.stage3.ratios[(period, user)] for period in active_periods]
-        ax.plot(
-            active_numbers,
+        stage2_values = [solution.stage2.ratios[(period, user)] for period in periods]
+        stage3_values = [solution.stage3.ratios[(period, user)] for period in periods]
+        active[user] = (
+            [period_index[period] for period in periods],
             stage2_values,
-            marker="o",
-            linestyle="--",
-            label=f"{user}, Stage 2",
-        )
-        ax.plot(
-            active_numbers,
             stage3_values,
-            marker="s",
-            linestyle="-",
-            label=f"{user}, Stage 3",
         )
-        for period, s2, s3 in zip(active_periods, stage2_values, stage3_values):
+        for period, s2, s3 in zip(periods, stage2_values, stage3_values):
             rows.append(
-                {
-                    "period": period,
-                    "user": user,
-                    "stage2_ratio": s2,
-                    "stage3_ratio": s3,
-                }
+                {"period": period, "user": user, "stage2_ratio": s2, "stage3_ratio": s3}
             )
     write_table(pd.DataFrame(rows), output_root / "figure_data", "figure_5_profiles")
-    ax.axhline(
-        float(solution.lambda_closed_form),
-        linestyle=":",
-        linewidth=1.0,
-        label=r"$\lambda^*$",
+    if not active:
+        return
+
+    users = list(active)
+    cmap = plt.get_cmap("tab10" if len(users) <= 10 else "tab20")
+    colors = {user: cmap(idx % cmap.N) for idx, user in enumerate(users)}
+    ticks = list(period_index.values())
+
+    if len(users) <= 6:
+        fig, ax = plt.subplots(figsize=DOUBLE_COLUMN)
+        for user in users:
+            numbers, stage2_values, _ = active[user]
+            ax.plot(
+                numbers, stage2_values, marker="o", markersize=4, linestyle="--",
+                linewidth=1.2, color=colors[user], label=f"{_math_label(user)}, Stage 2",
+            )
+        # Widest line first: coincident Stage-3 profiles stay visible because
+        # each later user is drawn narrower on top of the earlier ones.
+        widths = [3.4 - 0.9 * idx for idx in range(len(users))]
+        for user, width in zip(users, widths):
+            numbers, _, stage3_values = active[user]
+            ax.plot(
+                numbers, stage3_values, marker="s", markersize=4, linestyle="-",
+                linewidth=max(width, 1.0), color=colors[user], alpha=0.95,
+                label=f"{_math_label(user)}, Stage 3",
+            )
+        ax.axhline(
+            guarantee, linestyle=":", linewidth=1.0, color="black",
+            label=rf"guarantee $\lambda^*={guarantee:g}$",
+        )
+        ax.set_xlabel("Planning period")
+        ax.set_ylabel("Service ratio")
+        ax.set_xticks(ticks, [_math_label(period) for period in model.periods])
+        ax.set_ylim(0.5, 1.02)
+        ax.grid(True, linewidth=0.4, alpha=0.5)
+        ax.legend(frameon=False, ncol=2, fontsize=7.0)
+        _save(fig, "figure_5_profiles", output_root)
+        return
+
+    fig, axes = plt.subplots(1, 2, figsize=(7.2, 3.4), sharey=True)
+    for ax, (index, title) in zip(axes, ((1, "(a) Stage 2"), (2, "(b) Stage 3"))):
+        for user in users:
+            numbers, stage2_values, stage3_values = active[user]
+            values = stage2_values if index == 1 else stage3_values
+            ax.plot(
+                numbers, values, marker="o", markersize=2.6, linewidth=1.1,
+                color=colors[user], alpha=0.9,
+            )
+        ax.axhline(guarantee, linestyle=":", linewidth=1.0, color="black")
+        ax.set_title(title, fontsize=8.5)
+        ax.set_xlabel("Planning period")
+        ax.set_xticks(ticks, model.periods, fontsize=6.5)
+        ax.grid(True, linewidth=0.4, alpha=0.5)
+    axes[0].set_ylabel("Service ratio")
+    lowest = min(
+        min(min(stage2_values), min(stage3_values))
+        for _, stage2_values, stage3_values in active.values()
     )
-    ax.set_xlabel("Planning period")
-    ax.set_ylabel("Service ratio")
-    ax.set_xticks(list(period_index.values()), model.periods)
-    ax.set_ylim(0.5, 1.02)
-    # A per-user legend becomes unreadable clutter once a benchmark has more
-    # than a handful of users (e.g. gone_abat_jap has 20); skip it there.
-    if len(model.user_ids) <= 6:
-        ax.legend(frameon=False, ncol=2)
-    ax.grid(True, linewidth=0.4, alpha=0.5)
-    ax.set_title(f"{model.name}: lexicographic profiles")
+    axes[0].set_ylim(max(0.0, min(lowest, guarantee) - 0.03), 1.02)
+    handles = [
+        Line2D([], [], color=colors[user], linewidth=2.0, label=_math_label(user))
+        for user in users
+    ]
+    handles.append(
+        Line2D([], [], color="black", linestyle=":", linewidth=1.0,
+               label=rf"guarantee $\lambda^*={guarantee:g}$")
+    )
+    fig.legend(
+        handles=handles, loc="lower center", ncol=min(8, len(handles)),
+        frameon=False, fontsize=6.5, bbox_to_anchor=(0.5, -0.16),
+    )
     _save(fig, "figure_5_profiles", output_root)
 
 
@@ -344,6 +466,7 @@ def plot_lexicographic_profiles_per_user(
 def plot_matrix_patterns(model: Benchmark, output_root: Path) -> None:
     """Render the balance- and operator-matrix sparsity patterns for one benchmark."""
     period = model.periods[0]
+    small = len(model.nodes) <= 15
     m, _, node_order, edge_order = build_balance_matrices(model, period)
     a_matrix, operator_edge_order = matrix_operator(model, period)
     if operator_edge_order != edge_order:
@@ -365,16 +488,73 @@ def plot_matrix_patterns(model: Benchmark, output_root: Path) -> None:
         index_label="edge",
     )
 
-    fig_m, ax_m = plt.subplots(figsize=SINGLE_COLUMN)
-    ax_m.spy(m, markersize=7)
-    ax_m.set_xlabel("Edge variables")
-    ax_m.set_ylabel("Non-source nodes")
-    ax_m.set_title(f"{model.name}: sparsity pattern of $M_k$")
-    _save(fig_m, "figure_6_matrix", output_root)
+    _spy_panel(
+        m, node_order, edge_order, "Edge variables", "Non-source nodes",
+        "figure_6_matrix", output_root, small,
+    )
+    _spy_panel(
+        a_matrix, edge_order, list(model.user_ids), "Users", "Edges",
+        "figure_7_matrix", output_root, small,
+    )
 
-    fig_a, ax_a = plt.subplots(figsize=SINGLE_COLUMN)
-    ax_a.spy(np.abs(a_matrix) > 1e-14, markersize=7)
-    ax_a.set_xlabel("Users")
-    ax_a.set_ylabel("Edges")
-    ax_a.set_title(f"{model.name}: nonzero pattern of $A_k=M_k^{{-1}}P$")
-    _save(fig_a, "figure_7_matrix", output_root)
+
+_CELL_INCHES = 0.30  # identical cell size in Figures 6 and 7
+
+
+def _spy_panel(
+    matrix: np.ndarray,
+    row_labels: list[str],
+    column_labels: list[str],
+    xlabel: str,
+    ylabel: str,
+    stem: str,
+    output_root: Path,
+    mathify: bool,
+) -> None:
+    """Draw one sparsity panel.
+
+    Figures 6 and 7 are produced by this single routine so that the two panels
+    keep the same cell size, marker geometry, typography and colour code, as
+    requested in review; blue marks a positive entry and red a negative one,
+    which makes the lower-triangular structure of the balance matrix visible.
+    """
+    rows, columns = matrix.shape
+    fig, ax = plt.subplots(
+        figsize=(_CELL_INCHES * columns + 1.5, _CELL_INCHES * rows + 1.4)
+    )
+    for i in range(rows):
+        for j in range(columns):
+            value = matrix[i, j]
+            if abs(value) <= 1e-14:
+                continue
+            ax.add_patch(
+                Rectangle(
+                    (j - 0.34, i - 0.34), 0.68, 0.68,
+                    facecolor=_POSITIVE_COLOR if value > 0 else _NEGATIVE_COLOR,
+                    edgecolor="black", linewidth=0.4,
+                )
+            )
+    ax.set_xlim(-0.6, columns - 0.4)
+    ax.set_ylim(rows - 0.4, -0.6)
+    ax.set_aspect("equal")
+    labeller = _math_label if mathify else (lambda name: name)
+    ax.set_xticks(range(columns), [labeller(name) for name in column_labels])
+    ax.set_yticks(range(rows), [labeller(name) for name in row_labels])
+    ax.xaxis.set_ticks_position("top")
+    ax.xaxis.set_label_position("top")
+    ax.set_xlabel(xlabel, labelpad=6)
+    ax.set_ylabel(ylabel)
+    handles = [
+        Rectangle((0, 0), 1, 1, facecolor=_POSITIVE_COLOR, edgecolor="black",
+                  linewidth=0.4, label="positive entry")
+    ]
+    if bool((matrix < -1e-14).any()):
+        handles.append(
+            Rectangle((0, 0), 1, 1, facecolor=_NEGATIVE_COLOR, edgecolor="black",
+                      linewidth=0.4, label="negative entry")
+        )
+    ax.legend(
+        handles=handles, loc="upper center", bbox_to_anchor=(0.5, -0.04),
+        ncol=len(handles), frameon=False, fontsize=7.0,
+    )
+    _save(fig, stem, output_root)

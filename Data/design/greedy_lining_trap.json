@@ -1,0 +1,21 @@
+{
+  "name": "greedy_lining_trap",
+  "description": "Minimal rooted tree in which single-edge lining ascent gains nothing while the joint two-edge step raises the Stage-1 guarantee from 1/2 to 1. Counterexample for Theorem 4' (epsilon-plateau). Design instance: not part of the allocation benchmark family.",
+  "nodes": ["s", "a", "t1", "t2"],
+  "source": "s",
+  "edges": [
+    {"id": "e0", "tail": "s", "head": "a"},
+    {"id": "e1", "tail": "a", "head": "t1"},
+    {"id": "e2", "tail": "a", "head": "t2"}
+  ],
+  "users": [
+    {"id": "f1", "terminal": "t1", "weight": "1"},
+    {"id": "f2", "terminal": "t2", "weight": "1"}
+  ],
+  "periods": ["k1"],
+  "demand": {"k1": {"f1": "1", "f2": "1"}},
+  "source_capacity": {"k1": "4"},
+  "edge_capacity": {"k1": {"e0": "4", "e1": "1", "e2": "1"}},
+  "efficiency": {"k1": {"e0": "1", "e1": "1/2", "e2": "1/2"}},
+  "node_positions": {"s": [0.0, 1.0], "a": [1.0, 1.0], "t1": [2.0, 1.6], "t2": [2.0, 0.4]}
+}

@@ -63,8 +63,10 @@ def _hash_file(path: Path) -> str:
 def _reset_generated_directories(output_root: Path) -> list[str]:
     """Remove all previously generated assets before producing a fresh result package.
 
-    ``gui_exports`` (ad hoc single-benchmark CSV exports from the desktop app)
-    and the separately generated maximum scale package are preserved across
+    ``gui_exports`` (ad hoc single-benchmark CSV exports from the desktop app),
+    the separately generated maximum scale package, and ``investment`` (the
+    inverse-design assets that :mod:`investment_reporting` builds for a
+    separate paper and records in its own manifest) are preserved across
     regenerations; everything else is cleared.
 
     An entry that cannot be removed (e.g. an image from a previous run is
@@ -79,7 +81,11 @@ def _reset_generated_directories(output_root: Path) -> list[str]:
     locked: list[str] = []
     if output_root.exists():
         for entry in output_root.iterdir():
-            if entry.name in {"gui_exports", "synthetic_scale_500u_1022e_4p"}:
+            if entry.name in {
+                "gui_exports",
+                "synthetic_scale_500u_1022e_4p",
+                "investment",
+            }:
                 continue
             try:
                 if entry.is_dir():
@@ -482,8 +488,12 @@ def generate_results(project_root: str | Path) -> dict[str, object]:
         },
         "result_files": {},
     }
+    # ``investment`` holds the inverse-design assets of a separate paper; they
+    # carry their own manifest, so hashing them here would make this article's
+    # provenance record change whenever that paper is regenerated.
+    excluded_parts = {"manifests", "investment"}
     for path in sorted(output_root.rglob("*")):
-        if path.is_file() and "manifests" not in path.parts:
+        if path.is_file() and not excluded_parts.intersection(path.parts):
             manifest["result_files"][str(path.relative_to(project_root))] = _hash_file(
                 path
             )

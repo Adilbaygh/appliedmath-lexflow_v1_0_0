@@ -22,3 +22,14 @@ PROJECT_STATUS_UZ.md
 UPLOAD_TO_DRIVE.md
 
 # Article outputs are versioned deliberately. Do not ignore results/.
+
+# Local working material: manuscript rendering, scratch runs and bulk archives.
+# The public repository ships only what another user needs to run the project.
+work/
+tmp/
+output/
+outputs/
+Claude outputs/
+irrigation_datasets.zip
+
+LEXIMIN_loyiha_konteksti.md

@@ -1,0 +1,29 @@
+{
+  "paper": "Bottleneck-targeted rehabilitation planning (conference paper)",
+  "command": "python run_investment.py",
+  "inputs": {
+    "branching_shared_edge_bottleneck.json": "ef595475814a69477e4b3ece5beb863225dfc74cae8dfd88f4f643ba06335186",
+    "chain_source_bottleneck.json": "09a2b6a280b92e8fd2009fd454040e785d0c50dac3dc5d74c3c078c5369afcb6",
+    "gone_abat_jap.json": "33b695cbca1a7add8da9036db0736f79992cca73a56dcaa3b73640b9480a63e5",
+    "star_edge_bottleneck.json": "665358d4670963964e8157551b04950798ea9cf1a00e5e0daf9f1b849ae4c240",
+    "temporal_lexicographic.json": "71323668e34ce37a191a19fce184d6997c7a2a595fd2a36b87137166a1a78f0d",
+    "tie_bottleneck.json": "0c605124138052e28c45f900cfe282f5d39515f65cf0c4c238379a9d0e8f1f7b",
+    "greedy_lining_trap.json": "07e021d90a914b3a84f1ad4e9aca7c505c06ef71ea6faf267452e944354db9c7"
+  },
+  "outputs": {
+    "results/investment/INVESTMENT_SUMMARY.json": "c14452acce6802b34b960a30c07ab92daf4db4738a8de34e08902286efe2f220",
+    "results/investment/figure_data/csv/figure_1_greedy_lining_trap.csv": "d42a764810e5790c7ad9215fc63452f0c57ed011e980f2bed8263f58c73bc24a",
+    "results/investment/figure_data/csv/figure_2_guarantee_budget_curves.csv": "eb662f35dd0352b55b02ccb02ad421006bdf977b0ccc6677d5da6292206bef1e",
+    "results/investment/figure_data/csv/figure_3_headroom_map.csv": "21502b7cde2980bed702ac100fcfc438066e0c28cb3560479a73cc90cb71a09c",
+    "results/investment/figure_data/excel/figure_1_greedy_lining_trap.xlsx": "caabceee56c517eed0f6fb0391182012f9ac47ffccf9610fdc9f4b815dfb45ef",
+    "results/investment/figure_data/excel/figure_2_guarantee_budget_curves.xlsx": "7e145a09e5efc744d5e7f4e5131260e35efac200412f1baadf027096a2104040",
+    "results/investment/figure_data/excel/figure_3_headroom_map.xlsx": "e0cc249c3d0079c57d386cb1f24f50a0913a03d3380adf79951f06ecbc282ab9",
+    "results/investment/figures/figure_1_greedy_lining_trap.png": "ea62cea76c7adfde3ff160117dcf9f5212231bb7ecec2ca01062063788a254fd",
+    "results/investment/figures/figure_2_guarantee_budget_curves.png": "91d7f7a85b916002fcb81c55e538a085da390967d1f0cf610d5cf77cfd0d4894",
+    "results/investment/figures/figure_3_headroom_map.png": "5a5c0c8d0fbc1ed5b1a2d2fadea429c3ae83b9aaec32261c9db777f361a5b033",
+    "results/investment/tables/csv/table_1_investment_plans.csv": "f20e96d9d41a05c339a63c113a2dc7635dd147a2c5a5ea1c3ba853e8d206d8a2",
+    "results/investment/tables/csv/table_2_critical_resources.csv": "883944f352784c8211a77985708253e0e9fcd1b3374a4545d6ac815687930fa6",
+    "results/investment/tables/excel/table_1_investment_plans.xlsx": "00cd2b7d04b59511f69fa8311ea3c332a4569c2c9c8876f42a248e78bc5333e2",
+    "results/investment/tables/excel/table_2_critical_resources.xlsx": "86642a688d20cf29e6f993555caa14dd4457b23a68f484a0fcebf59046f7c87b"
+  }
+}

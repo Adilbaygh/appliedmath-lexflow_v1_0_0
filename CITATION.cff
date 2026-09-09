@@ -1,6 +1,14 @@
 cff-version: 1.2.0
 message: "Please cite the associated AppliedMath article and this software release."
 title: "AppliedMath LexFlow: Deterministic Lexicographic Flow Allocation on Lossy Capacitated Trees"
+abstract: >-
+  Exact, reproducible software for deterministic lexicographic flow allocation on
+  lossy, capacitated rooted trees, and for the inverse rehabilitation-design
+  problem posed on the same model: the closed-form minimum-cost widening plan and
+  its budget function, the epsilon-bottleneck-set ascent for lining, exact-rational
+  relief sets and minimum-cost transversals, six benchmark instances including a
+  36-node, 16-period controlled canal scenario, and the scripts that regenerate the
+  published tables and figures. All arithmetic is exact rational.
 type: software
 authors:
   - family-names: Kudaybergenov
@@ -13,8 +21,8 @@ authors:
     given-names: Gulsara
   - family-names: Ispanova
     given-names: Jadira
-version: 0.4.1
-date-released: 2026-08-21
+version: 0.5.0
+date-released: 2026-09-07
 license: MIT
 repository-code: "https://github.com/Adilbaygh/appliedmath-lexflow_v1_0_0"
 url: "https://github.com/Adilbaygh/appliedmath-lexflow_v1_0_0"
@@ -23,3 +31,7 @@ keywords:
   - lexicographic optimization
   - network flow
   - reproducible research
+  - irrigation canal networks
+  - capacity expansion
+  - max-min fairness
+  - rehabilitation planning
