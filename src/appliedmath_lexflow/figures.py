@@ -34,7 +34,7 @@ from .tables import write_table
 
 SINGLE_COLUMN = (3.5, 2.6)
 DOUBLE_COLUMN = (7.2, 4.3)
-_SOFTWARE_LABEL = "AppliedMath LexFlow 0.5.0"
+_SOFTWARE_LABEL = "AppliedMath LexFlow 0.5.1"
 
 # The colour code itself lives in figure_style.py, which the desktop GUI shares,
 # so an interactively displayed plot matches the published figure exactly.
@@ -101,10 +101,12 @@ def plot_benchmark_tree(model: Benchmark, output_root: Path) -> None:
     write_table(pd.DataFrame(node_rows), figure_data_dir, "figure_1_tree_nodes")
     write_table(pd.DataFrame(edge_rows), figure_data_dir, "figure_1_tree_edges")
 
-    # Larger trees need more canvas to stay legible; small benchmarks keep the
-    # original journal double-column size.
+    # Small benchmarks keep the journal double-column size. A large network is
+    # drawn at the full text width instead of on an oversized canvas, so that the
+    # figure is placed on the page at its native scale and the node and reach
+    # labels reach the reader at the size they were drawn.
     small = is_small_network(model)
-    figsize = DOUBLE_COLUMN if small else (12.0, 6.5)
+    figsize = DOUBLE_COLUMN if small else (7.2, 4.1)
     fig, ax = plt.subplots(figsize=figsize)
     draw_tree(model, graph, positions, ax, small=small)
     _save(fig, "figure_1_tree", output_root)

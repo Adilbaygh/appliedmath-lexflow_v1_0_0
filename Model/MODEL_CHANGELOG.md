@@ -1,5 +1,41 @@
 # Model development log
 
+## v0.5.1
+
+The changes made for the third review round.
+
+- `bench/robustness_suite.py` was added: 200 generated instances in seven
+  families (random capacities, source-binding, edge-binding, missing records,
+  deep chains, weight variation and degenerate cases) are solved from a fixed
+  seed and every instance is checked against the closed form, the operator and
+  node balance representations, the physical capacities, the Stage-1 floor, the
+  Stage-2 objective and the Stage-3 optimum. The suite reports the worst
+  residual of each gate rather than a pass flag;
+- `bench/weight_sweep.py` was added: it sweeps the Stage-2 weight ratio
+  geometrically over the small benchmark and applies three auditable weighting
+  rules to the surveyed canal, reporting that the Stage-1 guarantee and the
+  realized minimum service ratio are invariant under all of them while the
+  Stage-2 and Stage-3 optima move;
+- `figure_style.canal_scheme_layout` was added and is now used for a surveyed
+  network of more than fifteen nodes: the network is drawn in the form of the
+  linear canal scheme that the operating organisation itself uses, with the main
+  canal as a horizontal axis, every node at its surveyed chainage along that
+  axis, and each offtake on the bank from which it really takes water, the right
+  bank above and the left bank below. `figure_style` draws it with lead-offs
+  whose feet are the true tap points on the canal and with vertical offtake
+  identifiers, as in the operator's own drawing; where two offtake points lie
+  within a fraction of a per cent of the canal length of each other, only the
+  label end of the lead-off is displaced along its bank, by a two-pass spread
+  that preserves the along-canal order and stays inside the canal, so the bank
+  and the order of every offtake remain exactly those of the survey. On the
+  36-node canal the surveyed coordinates themselves placed consecutive offtakes
+  too close together for their identifiers to be set at any printable figure
+  width; the scheme keeps the hydraulic content and makes all 36 node
+  identifiers and all 35 reach identifiers legible. The colour legend,
+  previously drawn only on the small benchmarks, is now drawn on every
+  rooted-tree figure. No edge is added or removed, and the small benchmarks are
+  drawn exactly as before, byte for byte.
+
 ## v0.5.0
 
 - the reporting figures were revised in response to peer review: the rooted-tree

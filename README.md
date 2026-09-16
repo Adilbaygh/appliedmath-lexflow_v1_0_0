@@ -134,11 +134,12 @@ guarantee from every Stage-2 optimum.
 ## Public software release
 
 The public repository contains the code, model documentation, benchmark data,
-tests, compact source tables, and reproducibility metadata. Version `0.5.0` is
+tests, compact source tables, and reproducibility metadata. Version `0.5.1` is
 identified by the tagged GitHub release
-[`v0.5.0`](https://github.com/Adilbaygh/appliedmath-lexflow_v1_0_0/releases/tag/v0.5.0).
-The private Uzbek manuscript, licensed journal template, local review files,
-and Mendeley upload workspace remain outside this public repository and outside
-the curated public software archive. When Mendeley assigns the archive DOI, add
-that DOI to the archive metadata and to the article's Data and Code Availability
-Statement; no provisional DOI is recorded here.
+[`v0.5.1`](https://github.com/Adilbaygh/appliedmath-lexflow_v1_0_0/releases/tag/v0.5.1).
+The private Uzbek manuscript, licensed journal template and local review files
+remain outside this public repository and outside the curated public software
+archive. Each tagged release is archived on Zenodo under the concept DOI
+[10.5281/zenodo.22669687](https://doi.org/10.5281/zenodo.22669687), which
+resolves to the latest archived version; the version DOI of that release is the
+one cited in the article's Data Availability Statement.
