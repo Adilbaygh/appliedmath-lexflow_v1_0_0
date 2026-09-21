@@ -33,6 +33,8 @@ from .figures import (
 from .io import load_benchmark
 from .lexicographic import solve_three_stage
 from .operators import build_operator_exact
+from .robustness import run_suite as run_robustness_suite
+from .robustness import summarize as summarize_robustness_suite
 from .robust import (
     price_of_fairness,
     solve_leximin,
@@ -362,6 +364,13 @@ def generate_results(project_root: str | Path) -> dict[str, object]:
         "table_7_scale_verification": pd.DataFrame(scale_rows),
         "table_8_weight_sensitivity": pd.DataFrame(weight_rows),
     }
+    # Randomized robustness suite (Section 4.10, Appendix A.5): one row per
+    # instance and the per-family summary reported as Table A3. The instances
+    # are drawn from fixed seeds, so both tables are deterministic.
+    robustness_rows = run_robustness_suite()
+    robustness_summary = summarize_robustness_suite(robustness_rows)
+    tables["table_A3_robustness_suite"] = pd.DataFrame(robustness_summary)
+    tables["table_A3_robustness_instances"] = pd.DataFrame(robustness_rows)
     for stem, dataframe in tables.items():
         write_table(dataframe, table_dir, stem)
 
@@ -441,6 +450,11 @@ def generate_results(project_root: str | Path) -> dict[str, object]:
         "stage3_floor_preserved": maximum_stage3_floor_violation <= tolerance,
         "stage3_satisfaction_preserved": maximum_stage3_satisfaction_error <= 1e-8,
         "stage3_variation_not_increased": maximum_stage3_variation_excess <= tolerance,
+        "randomized_suite_gates": robustness_summary[-1]["gate_violations"] == 0,
+        "randomized_suite_bottleneck_identified": (
+            robustness_summary[-1]["bottleneck_identified"]
+            == robustness_summary[-1]["with_bottleneck"]
+        ),
     }
     verification_status = "PASS" if all(gates.values()) else "FAIL"
     summary = {
@@ -460,6 +474,16 @@ def generate_results(project_root: str | Path) -> dict[str, object]:
         "temporal_stage3_variation": temporal_solution.stage3.temporal_variation,
         "temporal_leximin_variation": temporal_leximin.temporal_variation,
         "scale_closed_form_max_difference": scale_max_difference,
+        "randomized_suite": {
+            "instances": robustness_summary[-1]["instances"],
+            "gate_violations": robustness_summary[-1]["gate_violations"],
+            "bottleneck_identified": robustness_summary[-1]["bottleneck_identified"],
+            "with_bottleneck": robustness_summary[-1]["with_bottleneck"],
+            "stage3_active_by_family": {
+                row["family"]: [row["stage3_active"], row["instances"]]
+                for row in robustness_summary[:-1]
+            },
+        },
         "verification_gates": gates,
         "verification_status": verification_status,
         "manifest": "results/manifests/run_manifest.json",
