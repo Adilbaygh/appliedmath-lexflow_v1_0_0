@@ -33,6 +33,10 @@ from .figures import (
 from .io import load_benchmark
 from .lexicographic import solve_three_stage
 from .operators import build_operator_exact
+from .comparison import run_comparison
+from .smoothing import attainment_summary as smoothing_attainment
+from .smoothing import cross_evaluation as smoothing_cross_evaluation
+from .robustness import generate_instances as generate_robustness_instances
 from .robustness import run_suite as run_robustness_suite
 from .robustness import summarize as summarize_robustness_suite
 from .robust import (
@@ -87,6 +91,12 @@ def _reset_generated_directories(output_root: Path) -> list[str]:
                 "gui_exports",
                 "synthetic_scale_500u_1022e_4p",
                 "investment",
+                # wall-clock measurements written by bench/scale_timing.py and
+                # bench/compare_rules.py; machine dependent, so not regenerated
+                "timing",
+                # parameter-perturbation study written by bench/perturbation.py
+                # (deterministic, but about five minutes long)
+                "perturbation",
             }:
                 continue
             try:
@@ -371,6 +381,36 @@ def generate_results(project_root: str | Path) -> dict[str, object]:
     robustness_summary = summarize_robustness_suite(robustness_rows)
     tables["table_A3_robustness_suite"] = pd.DataFrame(robustness_summary)
     tables["table_A3_robustness_instances"] = pd.DataFrame(robustness_rows)
+    # Comparison with alternative allocation rules (reviewer request): the six
+    # benchmarks individually, and the 200 randomized instances whose capacities
+    # are drawn independently of the loads. Times are measured separately by
+    # bench/compare_rules.py because they are not byte-reproducible.
+    comparison = run_comparison(
+        models,
+        [m for fam, m in generate_robustness_instances()
+         if fam.capacity_rule == "independent"],
+    )
+    tables["table_9_rule_comparison"] = pd.DataFrame(comparison.per_benchmark)
+    tables["table_9_rule_comparison_random_summary"] = pd.DataFrame(
+        comparison.random_summary)
+    tables["table_9_rule_comparison_random_instances"] = pd.DataFrame(
+        comparison.random_per_instance)
+    # Alternative Stage-3 smoothness criteria (reviewer request): cross
+    # evaluation on the two multi-period benchmarks and, over the randomized
+    # instances with independent capacities, the share of the attainable
+    # reduction of each criterion that optimizing another criterion delivers.
+    smoothing_rows = [
+        row for model in models if len(model.periods) > 1
+        for row in smoothing_cross_evaluation(model)
+    ]
+    smoothing_random = [
+        row for fam, m in generate_robustness_instances()
+        if fam.capacity_rule == "independent"
+        for row in smoothing_cross_evaluation(m)
+    ]
+    tables["table_10_smoothness_criteria"] = pd.DataFrame(smoothing_rows)
+    tables["table_10_smoothness_criteria_random_summary"] = pd.DataFrame(
+        smoothing_attainment(smoothing_random))
     for stem, dataframe in tables.items():
         write_table(dataframe, table_dir, stem)
 
