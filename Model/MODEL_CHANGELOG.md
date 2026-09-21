@@ -38,7 +38,11 @@ Theorems 1 and 2 and every published benchmark value are unchanged.
   (`table_10_block_variation_limits`);
 - the Theorem 1 proof in `THEOREMS_AND_PROOFS.md` now carries the optimal-set
   and least-element argument of the manuscript, Theorem 2 its dimensions and the
-  nonterminal-user remark, and Proposition 2 states when Stage 3 is redundant.
+  nonterminal-user remark, and Proposition 2 states when Stage 3 is redundant;
+- Figure 1 (small benchmarks): node identifiers are set at 13 pt inside the
+  markers and reach identifiers at 10 pt; the marker size is passed to the edge
+  drawing, so every arrow head ends at the circle instead of under it. Figure 8:
+  the lead-off arrow heads likewise stop at the offtake marker.
 
 ## v0.5.1
 

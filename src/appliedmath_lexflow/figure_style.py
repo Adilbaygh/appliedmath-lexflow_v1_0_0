@@ -306,8 +306,11 @@ def _draw_canal_scheme(
         ax.annotate("", xy=(head_x, head_y),
                     xytext=(head_x, head_y - sign * 0.10),
                     arrowprops={"arrowstyle": "-|>", "color": REACH_COLOR,
-                                "linewidth": 0.7, "shrinkA": 0, "shrinkB": 2.6,
-                                "mutation_scale": 6}, zorder=1)
+                                "linewidth": 0.7, "shrinkA": 0,
+                                # marker radius sqrt(70)/2 = 4.2 pt plus a gap,
+                                # so the head stops at the circle, not under it
+                                "shrinkB": 5.0,
+                                "mutation_scale": 7}, zorder=1)
         # The reach identifier rides the vertical part of its own lead-off and
         # the offtake identifier stands beyond the marker, so the two never meet.
         ax.annotate(reach.edge_id, (head_x, head_y - sign * 0.26),
@@ -378,7 +381,11 @@ def draw_tree(
     # other network it is placed beside the node in black instead of inside it,
     # so that the label size does not depend on the node spacing.
     node_size = 900 if small else 150
-    label_size = 8 if small else 7
+    # Inside a 900 pt^2 marker (about 34 pt across) a 13 pt identifier fills
+    # the circle as a symbol should; beside a small marker 7 pt is enough.
+    label_size = 13 if small else 7
+    edge_label_size = 10 if small else 6
+    legend_size = 7 if small else 6
 
     nx.draw_networkx_nodes(
         graph, positions, node_size=node_size,
@@ -388,7 +395,10 @@ def draw_tree(
     nx.draw_networkx_edges(
         graph, positions, arrows=True, arrowsize=14 if small else 9,
         arrowstyle="-|>", edge_color=REACH_COLOR, width=1.3 if small else 0.9,
-        ax=ax,
+        # the marker size must be passed here too: networkx otherwise clips the
+        # arrow at its default 300 pt^2 marker and the head disappears under
+        # the larger circle
+        node_size=node_size, min_target_margin=1.5, ax=ax,
     )
     # Reviewer request: identifiers are typeset as mathematical symbols on the
     # small benchmarks, where they denote the model variables of Section 2.
@@ -416,13 +426,16 @@ def draw_tree(
     }
     nx.draw_networkx_edge_labels(
         graph, edge_label_pos, edge_labels=edge_labels, rotate=False,
-        font_size=max(label_size - 1, 5),
+        font_size=edge_label_size,
+        # a little towards the tail, so that on a short reach the identifier
+        # stays clear of the arrow head
+        label_pos=0.42 if small else 0.5,
         bbox={"facecolor": "white", "edgecolor": "none", "pad": 0.6}, ax=ax,
     )
     if legend:
         ax.legend(
-            handles=tree_legend_handles(label_size),
-            loc="upper left", frameon=False, fontsize=max(label_size - 1, 5),
+            handles=tree_legend_handles(legend_size),
+            loc="upper left", frameon=False, fontsize=legend_size,
         )
     ax.set_axis_off()
     ax.margins(0.14, 0.12)
