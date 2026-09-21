@@ -1,5 +1,37 @@
 # Model development log
 
+## Unreleased (0.5.2 in preparation)
+
+Changes made for the second report of the third reviewer. The formulation,
+Theorems 1 and 2 and every published benchmark value are unchanged.
+
+- `robustness.py` replaces the body of `bench/robustness_suite.py`. The seven
+  families of 0.5.1 are reproduced instance by instance; three new families
+  draw source and reach capacities independently of the loads. Every instance
+  is checked against the Section 2.9 thresholds (previously the suite used its
+  own), with G3 and G4 reported separately and a relative physical residual
+  G5r added. The bottleneck named by the closed form is confirmed by the
+  Stage-1 LP alone, and each instance records whether the Stage-2 face is a
+  single point and whether Stage 3 lowers the variation;
+- `comparison.py`: the three-stage allocation against total-delivery
+  maximization, equal proportional allocation, the weighted single objective
+  (35) and full leximin;
+- `smoothing.py`: Stage 3 with ratio, demand-weighted, delivered-volume and
+  largest-jump criteria over the same Stage-2 face, cross-evaluated;
+- `perturbation.py` and `bench/perturbation.py`: five perturbation scenarios of
+  the controlled Gone Abat Jap scenario, 200 draws each;
+- `weights.py`: Tables A4 and A5 are now written by the analysis run; the
+  weights of Table A5 are labelled as synthetic;
+- `bench/scale_timing.py` times build, load assembly, closed-form scan, LP
+  assembly and LP solve separately, 30 repetitions, median/IQR/minimum, and
+  writes CSV files and an environment record; `bench/compare_rules.py` times
+  every allocation rule;
+- `results/timing/` and `results/perturbation/` are preserved by the analysis
+  run and recorded in its manifest;
+- the Theorem 1 proof in `THEOREMS_AND_PROOFS.md` now carries the optimal-set
+  and least-element argument of the manuscript, Theorem 2 its dimensions and the
+  nonterminal-user remark, and Proposition 2 states when Stage 3 is redundant.
+
 ## v0.5.1
 
 The changes made for the third review round.

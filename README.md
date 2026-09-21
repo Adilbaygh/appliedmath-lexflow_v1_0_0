@@ -86,6 +86,9 @@ src/                         Python package and desktop application
 tests/                        automated mathematical and implementation checks
 results/tables/csv/           version-controlled source tables for the Results section
 results/manifests/            version-controlled environment and SHA-256 provenance record
+results/timing/               machine-dependent timing measurements (bench scripts)
+results/perturbation/         perturbation study of the controlled scenario (bench script)
+bench/                        command-line scripts for the additional analyses
 .github/workflows/            deterministic continuous-integration checks
 ```
 
@@ -112,7 +115,11 @@ A run is accepted only when:
 - the exact path operator and exact node balance agree with zero rational residual;
 - all physical constraints are satisfied;
 - Stage 3 preserves the Stage-1 floor and Stage-2 objective within tolerance;
-- Stage 3 does not increase consecutive-period variation.
+- Stage 3 does not increase consecutive-period variation;
+- on all 400 randomized instances (seven families with prescribed capacity
+  ratios and three with capacities drawn independently of the loads) the same
+  thresholds hold, and the bottleneck named by the closed form is confirmed by
+  the Stage-1 LP alone (sufficiency and necessity tests).
 
 Run the tests:
 
@@ -120,7 +127,7 @@ Run the tests:
 python -m pytest -p no:cacheprovider
 ```
 
-The current release passes 24 automated tests. Across six deterministic
+The current development branch passes 73 automated tests. Across six deterministic
 benchmarks, the maximum closed-form/LP difference is approximately `1.11e-16`;
 exact operator–balance and node-balance residuals are zero. All five generated
 scale instances (up to 500 users, 1022 edges, four periods, and 2000 active
@@ -130,6 +137,27 @@ has variation range `[0.40, 1.05]`; Stage 3 returns the invariant minimum
 `0.40`. The current HiGHS vertex has variation `0.75`, so its observed reduction
 is `46.7%`; the `61.9%` value is only the worst-to-best range reduction, not a
 guarantee from every Stage-2 optimum.
+
+## Additional analyses
+
+These analyses answer the third review round. The deterministic ones are part
+of `python run_analysis.py`; the three machine-dependent or long-running ones
+are separate scripts whose outputs `run_analysis.py` preserves and records in
+the manifest.
+
+| Analysis | Command | Output |
+|---|---|---|
+| Randomized robustness suite, bottleneck identification, Stage-3 activity | `run_analysis.py` (console view: `python bench/robustness_suite.py`) | `results/tables/csv/table_A3_robustness_*.csv` |
+| Comparison with alternative allocation rules | `run_analysis.py` | `results/tables/csv/table_9_rule_comparison*.csv` |
+| Alternative Stage-3 smoothness criteria | `run_analysis.py` | `results/tables/csv/table_10_smoothness_criteria*.csv` |
+| Service-weight sweep and weighting rules (synthetic weights) | `run_analysis.py` (console view: `python bench/weight_sweep.py`) | `results/tables/csv/table_A4_*.csv`, `table_A5_*.csv` |
+| Parameter perturbation of the controlled scenario | `python bench/perturbation.py` | `results/perturbation/` |
+| Stage-1 closed form versus LP, phase-resolved timing | `python bench/scale_timing.py` | `results/timing/scale_timing*.csv`, `environment.json` |
+| Wall-clock time of every allocation rule | `python bench/compare_rules.py` | `results/timing/rule_comparison_timing.csv` |
+
+The perturbation study re-solves the deterministic model for perturbed inputs;
+it is a sensitivity analysis of the results, not a stochastic or robust
+formulation.
 
 ## Public software release
 

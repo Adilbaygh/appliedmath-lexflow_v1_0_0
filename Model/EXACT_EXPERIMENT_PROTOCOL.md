@@ -70,3 +70,43 @@ $5\times10^{-7}$ for every size.
 ## E6. Reproducibility
 
 Record dependency versions, platform information, input SHA-256 hashes, output SHA-256 hashes, and UTC generation time. Rerunning the same commit and dependency set must reproduce all exact tables and preserve numerical values within the declared tolerance.
+
+## E7. Randomized verification
+
+Draw 400 instances from ten families (`robustness.py`). Seven families (seed
+20260916) prescribe every capacity as a multiple of its full-demand load and
+test agreement between implementations. Three families (seed 20260921) draw
+source and reach capacities independently of the loads, so the bottleneck is not
+planted. On every instance require the gates G1 and G3–G8 with the thresholds of
+Section 2.9 and the bottleneck-identification test of gate 16 of the
+implementation specification, and record whether the Stage-2 face is a single
+point and whether Stage 3 lowers $\Omega$.
+
+## E8. Alternative allocation rules
+
+Apply total-delivery maximization, equal proportional allocation, the weighted
+single objective (35) with $(a,b,c)\in\lbrace(1,1,1),(1,5,1),(5,1,1)\rbrace$
+and full leximin to the six benchmarks and to the 200 independent-capacity
+instances. Report the minimum ratio, whether $\lambda^{\ast}$ is kept, total and
+weighted delivery, $\Omega$ and the number of users better or worse off than
+under the three-stage solution.
+
+## E9. Smoothness criteria
+
+Solve Stage 3 over the same Stage-2 face with the ratio, demand-weighted,
+delivered-volume and largest-jump criteria and evaluate every solution under
+all four.
+
+## E10. Perturbation of the controlled scenario
+
+Perturb demands ($\pm10\%$), efficiencies ($\pm0.02$), capacities ($\pm10\%$),
+all three together, and demand and losses jointly through one shock per period;
+200 draws each (seed 20260922). Record $\lambda^{\ast}$, the near-minimizer set,
+the runner-up margin, $S^{\ast}$ and $\Omega^{\ast}$.
+
+## E11. Timing
+
+Time the phases build, load assembly, closed-form scan, LP assembly and LP
+solve separately on the five scale instances, 30 repetitions after three
+warm-up runs; report median, interquartile range and minimum together with the
+processor, operating system and library versions.

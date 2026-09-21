@@ -67,3 +67,32 @@ def test_perturbation_is_deterministic() -> None:
     assert base_1["near_set_size"] == 7
     summary = summarize(base_1, rows_1)
     assert [s["scenario"] for s in summary] == ["demand", "correlated"]
+
+
+def test_weight_tables_reproduce_appendix_a6() -> None:
+    from appliedmath_lexflow.weights import weight_ratio_sweep, weighting_rules
+
+    sweep = weight_ratio_sweep(_model("temporal_lexicographic"))
+    assert [r["lambda_star"] for r in sweep] == [0.6] * 7
+    assert {(round(r["X1_stage3"], 6), round(r["X2_stage3"], 6)) for r in sweep} == {
+        (12.0, 10.0), (12.8, 9.2), (13.6, 8.4)}
+    rules = {r["rule"]: r for r in weighting_rules(_model("gone_abat_jap"))}
+    assert set(rules) == {"uniform", "synthetic_rank_1_to_20", "synthetic_two_classes"}
+    for r in rules.values():
+        assert abs(r["lambda_star"] - 0.85) < 1e-9
+        assert abs(r["minimum_ratio_stage3"] - 0.85) < 1e-7
+    assert "SYNTHETIC" in rules["synthetic_rank_1_to_20"]["description"]
+
+
+def test_guarantee_rules_keep_lambda_on_independent_instances() -> None:
+    from dataclasses import replace as dc_replace
+
+    from appliedmath_lexflow.robustness import FAMILIES, generate_instances
+
+    small = tuple(dc_replace(f, count=3) for f in FAMILIES)
+    for fam, model in generate_instances(small):
+        if fam.capacity_rule != "independent":
+            continue
+        rows = {r["rule"]: r for r in compare_model(model)}
+        for rule in ("three_stage", "equal_proportional", "leximin"):
+            assert rows[rule]["guarantee_kept"], (model.name, rule)

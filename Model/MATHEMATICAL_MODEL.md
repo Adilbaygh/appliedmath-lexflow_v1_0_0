@@ -2,7 +2,7 @@
 
 ## 1. Scope
 
-The model is deterministic. All demands, source limits, edge capacities, efficiencies, assignments, periods, and weights are fixed inputs. No scenario index, uncertainty set, probability distribution, robust counterpart, recourse decision, or chance constraint is used.
+The model is deterministic. All demands, source limits, edge capacities, efficiencies, assignments, periods, and weights are fixed inputs. No scenario index, uncertainty set, probability distribution, robust counterpart, recourse decision, or chance constraint is used. The perturbation study of the repository re-solves this deterministic model for perturbed inputs; it is a sensitivity analysis and not part of the formulation.
 
 ## 2. Rooted tree
 
