@@ -1,0 +1,8 @@
+rule,rule_label,instances,guarantee_kept,worst_minimum_ratio_over_lambda_star,median_minimum_ratio_over_lambda_star,median_total_delivery_relative_to_three_stage,median_temporal_variation_minus_three_stage,share_users_better,share_users_worse
+three_stage,Three-stage lexicographic (proposed),200,200,0.9999999996004516,1.0,1.0,0.0,0.0,0.0
+total_delivery_max,Total-delivery maximization,200,11,0.0,0.0,1.0207355324583414,1.4802843761830147,0.480528511821975,0.4812239221140473
+equal_proportional,Equal proportional allocation,200,200,1.0,1.0,0.46048432264653827,-3.2549997027427686,0.0,0.7809457579972183
+weighted_sum_balanced,"Weighted single objective (35), (a,b,c) = (1,1,1)",200,147,0.0,0.9999999999999999,0.8614521593602389,-2.6013533418960932,0.22600834492350486,0.6286509040333796
+weighted_sum_efficiency,"Weighted single objective (35), (a,b,c) = (1,5,1)",200,107,0.0,0.9999999999999998,0.9837870998445756,-1.6565447642450148,0.325452016689847,0.5340751043115438
+weighted_sum_guarantee,"Weighted single objective (35), (a,b,c) = (5,1,1)",200,191,0.9333116492510453,1.0,0.8562652539217737,-2.5944902053082144,0.20653685674547984,0.5695410292072323
+leximin,Full leximin (progressive filling),200,200,1.0,1.0,0.9907544381173621,-0.23897021693542086,0.5139082058414465,0.4527121001390821

@@ -1,0 +1,5 @@
+optimized,share_of_attainable_ratio_reduction,instances_with_ratio_freedom,share_of_attainable_demand_weighted_reduction,instances_with_demand_weighted_freedom,share_of_attainable_volume_reduction,instances_with_volume_freedom,share_of_attainable_max_jump_reduction,instances_with_max_jump_freedom
+ratio,1.0,61,0.9999999999999923,69,0.23354189841859813,72,0.0,5
+demand_weighted,1.0,61,1.0,69,0.18592828499734518,72,0.0,5
+volume,1.3269916181597121e-13,61,4.484690040148325e-14,69,1.0,72,0.05182360983909751,5
+max_jump,4.006518286309897e-14,61,2.5626278871669133e-15,69,1.0737764311118128e-15,72,1.0,5
