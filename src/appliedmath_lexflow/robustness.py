@@ -17,11 +17,21 @@ The suite answers two different questions and keeps them apart.
    not known in advance. Two use canal-like data (efficiencies from a few lining
    classes, uniform weights), one uses generic data (a fine efficiency grid and
    heterogeneous weights), which separates the effect of ties in the data on
-   the size of the Stage-2 optimal face. On these instances the suite checks, in addition to the
-   acceptance gates, that every resource the closed form names as a minimizer
-   of (25) is tight at the Stage-1 LP optimum and at the Stage-3 optimum --
-   which Theorem 1 requires of every Stage-1 optimal allocation -- and records
-   how often Stage 3 changes the Stage-2 allocation.
+   the size of the Stage-2 optimal face.
+
+On every instance, in addition to the acceptance gates, the suite identifies
+the bottleneck in two independent ways: every resource the closed form names as
+a minimizer of (25) must be tight at the Stage-1 LP optimum and at the Stage-3
+optimum (Theorem 1 requires this of every Stage-1 optimal allocation), and the
+Stage-1 LP alone must confirm it -- relaxing all other resources tenfold leaves
+the LP guarantee unchanged, relaxing the named resources by 0.1% raises it.
+It also records whether the Stage-2 optimum is a single point, which is the
+structural condition under which Stage 3 is redundant, and how often Stage 3
+lowers the temporal variation.
+
+The acceptance thresholds are those of Section 2.9, unchanged; the relative
+physical residual G5r (violation divided by the capacity of the same resource)
+is added because the absolute residual G5 scales with the volumes drawn.
 
 Every generated instance is feasible by construction: r = 0 satisfies every
 constraint of (1)-(15), because all gross loads are then zero and lambda = 0 is
@@ -36,14 +46,23 @@ from __future__ import annotations
 
 import random
 import statistics
+import zlib
 from dataclasses import dataclass, field
 from fractions import Fraction
 from typing import Callable
 
+import numpy as np
+from scipy.optimize import linprog
+
 from .domain import Benchmark, Edge, User
-from .lexicographic import solve_three_stage
+from .lexicographic import solve_three_stage, weighted_coefficients
 from .operators import build_operator_exact
-from .stage1 import full_demand_loads, solve_stage1_closed_form, solve_stage1_lp
+from .stage1 import (
+    full_demand_loads,
+    physical_matrices,
+    solve_stage1_closed_form,
+    solve_stage1_lp,
+)
 from .verification import maximum_physical_violation, verify_operator_exact
 
 SEED_PRESCRIBED = 20260916
@@ -56,6 +75,17 @@ TIGHTNESS_TOLERANCE = 1e-9
 STAGE3_ACTIVITY_THRESHOLD = 1e-9
 #: A ratio is counted as moved by Stage 3 when it changes by more than this.
 RATIO_MOVE_THRESHOLD = 1e-9
+#: Resources whose capacity-to-load ratio lies within this relative margin of
+#: lambda* form the near-minimizer set used by the LP-based identification test
+#: (the manuscript reads the diagnosis of (25) "to within the precision of the
+#: data"; the near-degenerate family places a competitor at 1e-12).
+NEAR_MINIMIZER_MARGIN = Fraction(1, 10**6)
+#: Relaxation factors of the LP-based identification test.
+RELAX_OTHERS = Fraction(10)
+RELAX_NAMED = Fraction(1001, 1000)
+#: The Stage-2 optimal face is counted as a single point when a random linear
+#: functional varies over it by no more than this amount.
+FACE_WIDTH_THRESHOLD = 1e-7
 
 
 # --------------------------------------------------------------------------- #
@@ -371,6 +401,91 @@ def _max_relative_slack(model, labels, ratios, a_coeff, b_coeff) -> float:
     )
 
 
+def _resource_ratios(model: Benchmark, closed) -> dict[str, Fraction]:
+    """Capacity-to-full-load ratio of every positive-load resource."""
+    ratios: dict[str, Fraction] = {}
+    for k, load in closed.source_loads.items():
+        if load > 0:
+            ratios[f"source:{k}"] = model.source_capacity[k] / load
+    for (k, e), load in closed.edge_loads.items():
+        if load > 0:
+            ratios[f"edge:{k}:{e}"] = model.edge_capacity[k][e] / load
+    return ratios
+
+
+def _scaled(model: Benchmark, factor_by_label: dict[str, Fraction]) -> Benchmark:
+    source_capacity = {
+        k: model.source_capacity[k] * factor_by_label.get(f"source:{k}", Fraction(1))
+        for k in model.periods
+    }
+    edge_capacity = {
+        k: {
+            e: model.edge_capacity[k][e] * factor_by_label.get(f"edge:{k}:{e}", Fraction(1))
+            for e in model.edge_ids
+        }
+        for k in model.periods
+    }
+    return _with_capacities(model, source_capacity, edge_capacity)
+
+
+def lp_bottleneck_test(model: Benchmark, closed) -> tuple[bool, bool, float, float]:
+    """Identify the bottleneck with the Stage-1 LP alone.
+
+    The near-minimizer set N collects the resources whose ratio lies within
+    NEAR_MINIMIZER_MARGIN of lambda*. Two LP solves test it without using the
+    closed form's value:
+
+    * sufficiency -- relaxing every resource outside N tenfold leaves the LP
+      guarantee unchanged, so N alone limits the guarantee;
+    * necessity -- relaxing the resources of N by 0.1% raises the LP guarantee,
+      so N does limit it.
+
+    Returns (sufficient, necessary, lp_after_relaxing_others,
+    lp_after_relaxing_named). For lambda* = 1 no resource binds and both tests
+    are reported as passed.
+    """
+    lam = closed.lambda_star
+    if lam >= 1:
+        return True, True, 1.0, 1.0
+    ratios = _resource_ratios(model, closed)
+    near = {lab for lab, xi in ratios.items() if xi <= lam * (1 + NEAR_MINIMIZER_MARGIN)}
+    others = {lab: RELAX_OTHERS for lab in ratios if lab not in near}
+    lp_others = solve_stage1_lp(_scaled(model, others)).lambda_star
+    lp_named = solve_stage1_lp(_scaled(model, {lab: RELAX_NAMED for lab in near})).lambda_star
+    sufficient = abs(lp_others - float(lam)) <= 1e-9
+    necessary = lp_named - float(lam) > 1e-9
+    return sufficient, necessary, lp_others, lp_named
+
+
+def stage2_face_width(model: Benchmark, lambda_star: float, stage2_ratios) -> float:
+    """Spread of a random linear functional over the Stage-2 optimal face.
+
+    Zero (to solver precision) means the Stage-2 optimum is a single point, in
+    which case Stage 3 has nothing to choose and is redundant by structure.
+    """
+    records = model.active_records
+    physical_a, physical_b, _ = physical_matrices(model)
+    weighted = weighted_coefficients(model, records)
+    w_star = float(weighted @ np.array([stage2_ratios[r] for r in records]))
+    rng = np.random.default_rng(zlib.crc32(model.name.encode("utf-8")))
+    direction = rng.uniform(-1.0, 1.0, size=len(records))
+    values = []
+    for sign in (1.0, -1.0):
+        result = linprog(
+            sign * direction,
+            A_ub=physical_a, b_ub=physical_b,
+            A_eq=weighted.reshape(1, -1), b_eq=np.array([w_star]),
+            bounds=[(lambda_star, 1.0)] * len(records),
+            method="highs",
+            options={"primal_feasibility_tolerance": 1e-9,
+                     "dual_feasibility_tolerance": 1e-9},
+        )
+        if not result.success:
+            raise RuntimeError(f"Stage-2 face probe failed: {result.message}")
+        values.append(float(direction @ result.x))
+    return max(0.0, values[1] - values[0])
+
+
 def check(model: Benchmark) -> dict[str, object]:
     """Every acceptance gate plus bottleneck and Stage-3 diagnostics."""
     closed = solve_stage1_closed_form(model)
@@ -394,8 +509,19 @@ def check(model: Benchmark) -> dict[str, object]:
     slack_lp = _max_relative_slack(model, resources, lp.ratios, a_coeff, b_coeff)
     slack_s3 = _max_relative_slack(model, resources, stage3.ratios, a_coeff, b_coeff)
 
+    sufficient, necessary, lp_others, lp_named = lp_bottleneck_test(model, closed)
+    face_width = stage2_face_width(model, lambda_star, stage2.ratios)
+    face_is_point = face_width <= FACE_WIDTH_THRESHOLD
+
     omega2 = stage2.temporal_variation
     omega3 = stage3.temporal_variation
+    stage3_active = omega2 - omega3 > STAGE3_ACTIVITY_THRESHOLD
+    if stage3_active:
+        stage3_outcome = "active"
+    elif face_is_point:
+        stage3_outcome = "redundant: Stage-2 optimum unique"
+    else:
+        stage3_outcome = "inactive: Stage-2 vertex already smoothest"
     moved = sum(
         1 for rec in model.active_records
         if abs(stage3.ratios[rec] - stage2.ratios[rec]) > RATIO_MOVE_THRESHOLD
@@ -419,12 +545,20 @@ def check(model: Benchmark) -> dict[str, object]:
         "bottleneck_count": len(resources),
         "bottleneck_slack_lp": slack_lp,
         "bottleneck_slack_stage3": slack_s3,
+        "bottleneck_tight": bool(max(slack_lp, slack_s3) <= TIGHTNESS_TOLERANCE),
+        "lp_relax_others": lp_others,
+        "lp_relax_named": lp_named,
+        "bottleneck_sufficient": sufficient,
+        "bottleneck_necessary": necessary,
         "bottleneck_identified": bool(
-            max(slack_lp, slack_s3) <= TIGHTNESS_TOLERANCE),
+            max(slack_lp, slack_s3) <= TIGHTNESS_TOLERANCE and sufficient and necessary),
         # Stage-3 diagnostics
         "omega_stage2": omega2,
         "omega_stage3": omega3,
-        "stage3_active": bool(omega2 - omega3 > STAGE3_ACTIVITY_THRESHOLD),
+        "stage2_face_width": face_width,
+        "stage2_optimum_unique": bool(face_is_point),
+        "stage3_active": bool(stage3_active),
+        "stage3_outcome": stage3_outcome,
         "stage3_relative_reduction": (omega2 - omega3) / omega2 if omega2 > 0 else 0.0,
         "ratios_moved_by_stage3": moved,
         # size
@@ -438,10 +572,13 @@ def check(model: Benchmark) -> dict[str, object]:
 GATES = ("G1_closed_vs_lp", "G3_operator_balance", "G4_node_residual",
          "G5_physical_abs", "G5_physical_rel", "G6_floor", "G7_satisfaction",
          "G8_variation_excess")
+#: The thresholds of Section 2.9, applied unchanged to every randomized
+#: instance, plus the relative physical residual G5r (violation divided by the
+#: capacity of the same resource), which is scale free.
 TOLERANCE = {
-    "G1_closed_vs_lp": 1e-9, "G3_operator_balance": 0.0, "G4_node_residual": 0.0,
-    "G5_physical_abs": 1e-6, "G5_physical_rel": 1e-9, "G6_floor": 1e-9,
-    "G7_satisfaction": 1e-9, "G8_variation_excess": 1e-9,
+    "G1_closed_vs_lp": 5e-7, "G3_operator_balance": 0.0, "G4_node_residual": 0.0,
+    "G5_physical_abs": 5e-7, "G5_physical_rel": 1e-9, "G6_floor": 5e-7,
+    "G7_satisfaction": 1e-8, "G8_variation_excess": 5e-7,
 }
 
 
@@ -493,10 +630,19 @@ def summarize(rows: list[dict[str, object]]) -> list[dict[str, object]]:
                 1 for r in grp if r["bottleneck_class"] == "edge+source"),
             "unconstrained": sum(1 for r in grp if r["bottleneck_count"] == 0),
             "multiple_minimizers": sum(1 for r in grp if r["bottleneck_count"] > 1),
+            "bottleneck_tight": sum(1 for r in with_bottleneck if r["bottleneck_tight"]),
+            "bottleneck_sufficient": sum(
+                1 for r in with_bottleneck if r["bottleneck_sufficient"]),
+            "bottleneck_necessary": sum(
+                1 for r in with_bottleneck if r["bottleneck_necessary"]),
             "bottleneck_identified": sum(
                 1 for r in with_bottleneck if r["bottleneck_identified"]),
             "with_bottleneck": len(with_bottleneck),
+            "stage2_optimum_unique": sum(1 for r in grp if r["stage2_optimum_unique"]),
             "stage3_active": len(active),
+            "stage3_inactive_face_not_point": sum(
+                1 for r in grp
+                if not r["stage3_active"] and not r["stage2_optimum_unique"]),
             "stage3_active_share": len(active) / len(grp),
             "median_relative_reduction_when_active": (
                 statistics.median(float(r["stage3_relative_reduction"]) for r in active)

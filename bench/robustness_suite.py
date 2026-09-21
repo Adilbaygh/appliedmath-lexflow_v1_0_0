@@ -46,12 +46,27 @@ def main() -> int:
         print(f"{s['family_label']:58} {s['instances']:>4} "
               + " ".join(f"{s['max_' + g]:9.2e}" for g in GATES))
     print()
-    print(f"{'family':58} {'bottleneck found':>17} {'Stage 3 active':>15} "
-          f"{'median red.':>12}")
+    print("Bottleneck: tight = named resources tight at the LP and Stage-3 optima;")
+    print("  suff. = LP value unchanged when all other resources are relaxed x10;")
+    print("  nec.  = LP value rises when the named resources are relaxed by 0.1%.")
+    print(f"{'family':58} {'tight':>8} {'suff.':>8} {'nec.':>8} {'found':>8}")
     for s in table:
-        found = f"{s['bottleneck_identified']}/{s['with_bottleneck']}"
-        act = f"{s['stage3_active']}/{s['instances']}"
-        print(f"{s['family_label']:58} {found:>17} {act:>15} "
+        n = s['with_bottleneck']
+        print(f"{s['family_label']:58} "
+              + " ".join(f"{str(s[c]) + '/' + str(n):>8}" for c in (
+                  'bottleneck_tight', 'bottleneck_sufficient',
+                  'bottleneck_necessary', 'bottleneck_identified')))
+    print()
+    print("Stage 3: unique = Stage-2 optimum is a single point (Stage 3 redundant);")
+    print("  active = Stage 3 lowered Omega; vertex = face is not a point but the")
+    print("  solver's Stage-2 vertex was already the smoothest.")
+    print(f"{'family':58} {'unique':>8} {'active':>8} {'vertex':>8} {'median red.':>12}")
+    for s in table:
+        n = s['instances']
+        print(f"{s['family_label']:58} "
+              f"{str(s['stage2_optimum_unique']) + '/' + str(n):>8} "
+              f"{str(s['stage3_active']) + '/' + str(n):>8} "
+              f"{str(s['stage3_inactive_face_not_point']) + '/' + str(n):>8} "
               f"{s['median_relative_reduction_when_active']:12.3f}")
     total = table[-1]
     print()

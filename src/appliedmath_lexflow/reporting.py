@@ -479,8 +479,13 @@ def generate_results(project_root: str | Path) -> dict[str, object]:
             "gate_violations": robustness_summary[-1]["gate_violations"],
             "bottleneck_identified": robustness_summary[-1]["bottleneck_identified"],
             "with_bottleneck": robustness_summary[-1]["with_bottleneck"],
-            "stage3_active_by_family": {
-                row["family"]: [row["stage3_active"], row["instances"]]
+            "stage3_by_family": {
+                row["family"]: {
+                    "instances": row["instances"],
+                    "stage2_optimum_unique": row["stage2_optimum_unique"],
+                    "stage3_active": row["stage3_active"],
+                    "stage3_inactive_face_not_point": row["stage3_inactive_face_not_point"],
+                }
                 for row in robustness_summary[:-1]
             },
         },

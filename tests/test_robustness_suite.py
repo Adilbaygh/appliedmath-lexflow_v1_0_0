@@ -75,3 +75,23 @@ def test_summary_counts_add_up() -> None:
     classified = (total["source_bound"] + total["edge_bound"]
                   + total["source_and_edge_tied"] + total["unconstrained"])
     assert classified == total["instances"]
+
+
+def test_stage3_outcome_is_consistent_with_the_stage2_face() -> None:
+    # Stage 3 can lower Omega only if the Stage-2 optimum is not unique.
+    for _, model in generate_instances(_small(3)):
+        row = check(model)
+        if row["stage3_active"]:
+            assert not row["stage2_optimum_unique"], model.name
+        if row["stage2_optimum_unique"]:
+            assert row["omega_stage3"] <= row["omega_stage2"] + 1e-9
+
+
+def test_suite_uses_the_section_2_9_thresholds() -> None:
+    assert TOLERANCE["G1_closed_vs_lp"] == 5e-7
+    assert TOLERANCE["G5_physical_abs"] == 5e-7
+    assert TOLERANCE["G6_floor"] == 5e-7
+    assert TOLERANCE["G7_satisfaction"] == 1e-8
+    assert TOLERANCE["G8_variation_excess"] == 5e-7
+    assert TOLERANCE["G3_operator_balance"] == 0.0
+    assert TOLERANCE["G4_node_residual"] == 0.0
