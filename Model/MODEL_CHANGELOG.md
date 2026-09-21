@@ -1,6 +1,6 @@
 # Model development log
 
-## Unreleased (0.5.2 in preparation)
+## v0.5.2
 
 Changes made for the second report of the third reviewer. The formulation,
 Theorems 1 and 2 and every published benchmark value are unchanged.

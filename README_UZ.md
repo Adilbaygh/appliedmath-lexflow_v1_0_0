@@ -176,7 +176,7 @@ python -m pytest -p no:cacheprovider
 
 Жорий версияда:
 
-- 73/73 автоматик тест PASS (ишлаб чиқиш тармоғи);
+- 75/75 автоматик тест PASS;
 - 6 та детерминистик benchmark: 5 exact синтетик ва 1 controlled scenario;
 - $\max|\lambda^{\mathrm{LP}}-\lambda^{\mathrm{cf}}|\approx1.11\times10^{-16}$;
 - exact operator–balance фарқи $0$;
@@ -228,9 +228,9 @@ python -m tkinter
 ## Мақола ва қўшимча материал
 
 Очиқ репозиторийда код, математик ҳужжатлар, benchmark маълумотлари, тестлар,
-ихчам натижа жадваллари ва репродуктивлик метамаълумотлари сақланади. `0.5.1`
+ихчам натижа жадваллари ва репродуктивлик метамаълумотлари сақланади. `0.5.2`
 версияси GitHub’даги
-[`v0.5.1` release](https://github.com/Adilbaygh/appliedmath-lexflow_v1_0_0/releases/tag/v0.5.1)
+[`v0.5.2` release](https://github.com/Adilbaygh/appliedmath-lexflow_v1_0_0/releases/tag/v0.5.2)
 билан белгиланади. Мақоланинг ўзбекча ишчи нусхаси, лицензияланган журнал
 шаблони ва ички аудит файллари очиқ GitHub репозиторийсига ҳамда очиқ
 дастурий архивга киритилмайди. Ҳар бир тегланган release Zenodo'да
