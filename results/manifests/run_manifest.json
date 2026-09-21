@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-09-21T06:12:49.214131+00:00",
+  "generated_at_utc": "2026-09-21T07:16:53.901564+00:00",
   "project": "AppliedMath deterministic lexicographic tree-flow article",
   "model_boundary": "deterministic rooted trees; no scenario-indexed, stochastic, or robust optimization",
   "command": "python run_analysis.py",
@@ -223,9 +223,9 @@
     "results\\tie_bottleneck\\figures\\figure_7_matrix.png": "2178b0b5480e1af1b2e88421a42400952dc5b94a93e78a4b50eed162e8a11f34",
     "results\\tie_bottleneck\\figures\\profiles_by_user\\f1.png": "5bd79f04992b09f63b86ca28e8b31e4b4fdefab65f6f0d69d2482143a7346f56",
     "results\\tie_bottleneck\\figures\\profiles_by_user\\f2.png": "024f6acc8e8f7695b1a35f9b7df085317c14a9a7c883ff9d782eac48a2d0bb94",
-    "results\\timing\\environment.json": "c0636b64e357e46fa19ebce2697eec8c37801933ebfe868d2df9d4772256cb5c",
-    "results\\timing\\rule_comparison_timing.csv": "6f2f41a333ca04730441f64c95097fe7d8016245d1ca237b472487de74263d2d",
-    "results\\timing\\scale_timing.csv": "d60908ef0dc7b43e2f7cb99afbcf136e1d469f25fb4745498004c8b6da7f4346",
-    "results\\timing\\scale_timing_raw.csv": "cd28285c0d71faf209149829f61fd0e2d5551ba41e8d5be237b36ce4fd63b9be"
+    "results\\timing\\environment.json": "ba76e5a8a4ed27a6bf2193924cb3d0056808bf6e2be87d79229d50ae5b214aa5",
+    "results\\timing\\rule_comparison_timing.csv": "713709e4f7e1fb56cc2fd02e4a4d75d861fc606e4f9e1633bc67dbdee89e01a0",
+    "results\\timing\\scale_timing.csv": "72f4eaee942efeee698f9229f87d01943a307fca141a8b94b0d62472336b3df6",
+    "results\\timing\\scale_timing_raw.csv": "4f82f85fb50c32324a78d03823500f39e7e4726a9eb8e0d7576d2aa8e0f66e16"
   }
 }
