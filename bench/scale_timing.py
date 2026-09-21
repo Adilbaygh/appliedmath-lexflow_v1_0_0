@@ -34,7 +34,6 @@ import math
 import os
 import platform
 import statistics
-import subprocess
 import sys
 import time
 import tracemalloc
@@ -165,12 +164,16 @@ def _stats(values):
 def _cpu_name() -> str:
     try:
         if sys.platform.startswith("win"):
-            out = subprocess.run(
-                ["powershell", "-NoProfile", "-Command",
-                 "(Get-CimInstance Win32_Processor).Name"],
-                capture_output=True, text=True, timeout=20).stdout.strip()
-            if out:
-                return out
+            # read the marketing name from the registry: no subprocess, so no
+            # dependence on the console code page
+            import winreg
+
+            key = winreg.OpenKey(
+                winreg.HKEY_LOCAL_MACHINE,
+                r"HARDWARE\DESCRIPTION\System\CentralProcessor\0")
+            name, _ = winreg.QueryValueEx(key, "ProcessorNameString")
+            if name:
+                return str(name).strip()
         elif Path("/proc/cpuinfo").exists():
             for line in Path("/proc/cpuinfo").read_text().splitlines():
                 if line.startswith("model name"):
