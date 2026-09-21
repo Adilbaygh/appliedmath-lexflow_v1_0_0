@@ -15,11 +15,13 @@ pivoting:
   the value Stage 3 attains; ``Omega_max`` is the largest variation on that
   face.  The ratio ``(Omega_max - Omega_min) / Omega_max`` is a worst-to-best
   range reduction, not a guaranteed reduction from an arbitrary Stage-2 point.
-* ``price_of_fairness`` -- how much total net delivery the Stage-1 max-min
-  guarantee costs relative to the pure-efficiency optimum.
+* ``price_of_fairness`` -- how much weighted delivery ``sum w_f d_kf r_kf`` the
+  Stage-1 max-min guarantee costs relative to the pure-efficiency optimum.
 * ``solve_leximin`` -- the full lexicographic max-min (leximin) allocation by
-  exact progressive filling; unlike Stage 1 it is a single,
-  solver-independent vector on the model's convex packing set.
+  exact progressive filling.  Its sorted levels are solver independent; the
+  article does not claim that the allocation vector itself is unique in general
+  (Section 4.5), and this routine returns the vector produced by the
+  deterministic filling order.
 
 Every routine here uses only physical capacities, demands, efficiencies and the
 exact Stage-1 floor, so its output is reproducible across solvers.
@@ -208,8 +210,9 @@ def solve_leximin(
     Every free coordinate using a resource that attains this minimum is blocked
     and is frozen at that level.  The calculation uses :class:`Fraction`
     throughout, so it needs neither repeated LP freeze tests nor numerical
-    slack.  Convexity of the packing set makes the resulting leximin vector
-    unique. ``max_records`` remains only as an optional caller-controlled guard.
+    slack.  The sorted leximin levels are unique; uniqueness of the allocation
+    vector is not claimed (article, Section 4.5).  ``max_records`` remains only
+    as an optional caller-controlled guard.
     """
     from .operators import build_operator_exact
 

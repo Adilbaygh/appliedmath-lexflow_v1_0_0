@@ -1,6 +1,6 @@
 """Comparison of the three-stage hierarchy with alternative allocation rules.
 
-Every rule is applied to the same physical feasible set (1)-(11):
+Every rule is applied to the same physical feasible set R of (2), (10), (11):
 
 * ``three_stage``          -- the proposed hierarchy (Stage-3 allocation);
 * ``total_delivery_max``   -- maximize total net delivery sum d_kf r_kf, no floor;
