@@ -28,6 +28,14 @@ Theorems 1 and 2 and every published benchmark value are unchanged.
   every allocation rule;
 - `results/timing/` and `results/perturbation/` are preserved by the analysis
   run and recorded in its manifest;
+- `weights.py` adds rule (v) (demand-normalized weights) and a deliberately
+  one-sided synthetic rule to Table A5, and reports for every rule which blocks
+  gain or lose against uniform weights (`table_A5_weighting_rules_by_block`,
+  `_summary`); no rule lowers any block below the guarantee;
+- `smoothing.block_variation_limits` computes, per block, the smallest
+  period-to-period variation limit the Stage-2 face admits, whether those limits
+  are jointly attainable, and a demand-scaled limit rule
+  (`table_10_block_variation_limits`);
 - the Theorem 1 proof in `THEOREMS_AND_PROOFS.md` now carries the optimal-set
   and least-element argument of the manuscript, Theorem 2 its dimensions and the
   nonterminal-user remark, and Proposition 2 states when Stage 3 is redundant.

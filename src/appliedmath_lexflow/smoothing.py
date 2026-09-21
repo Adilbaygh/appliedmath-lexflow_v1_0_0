@@ -157,3 +157,116 @@ def attainment_summary(rows: list[dict[str, object]]) -> list[dict[str, object]]
             entry[f"instances_with_{b}_freedom"] = len(shares)
         out.append(entry)
     return out
+
+
+# --------------------------------------------------------------------------- #
+#  block-specific variation limits
+# --------------------------------------------------------------------------- #
+def _face_lp(model: Benchmark, solution, extra_vars: int):
+    """Common pieces of an LP over the Stage-2 optimal face with extra variables."""
+    lam = float(solution.lambda_closed_form)
+    records = model.active_records
+    n = len(records)
+    physical_a, physical_b, _ = physical_matrices(model)
+    weighted = weighted_coefficients(model, records)
+    w_star = float(weighted @ np.array([solution.stage2.ratios[r] for r in records]))
+    rows = [np.concatenate([row, np.zeros(extra_vars)]) for row in physical_a]
+    rhs = [float(b) for b in physical_b]
+    a_eq = np.concatenate([weighted, np.zeros(extra_vars)]).reshape(1, -1)
+    bounds = [(lam, 1.0)] * n
+    return records, rows, rhs, a_eq, np.array([w_star]), bounds
+
+
+def _jump_rows(model, records, pairs_of_block, var_index, total):
+    index = {rec: i for i, rec in enumerate(records)}
+    rows = []
+    for left, right in pairs_of_block:
+        for sign in (1.0, -1.0):
+            row = np.zeros(total)
+            row[index[right]] = sign
+            row[index[left]] = -sign
+            row[var_index] = -1.0
+            rows.append(row)
+    return rows
+
+
+def block_variation_limits(model: Benchmark, solution=None) -> list[dict[str, object]]:
+    """Per-block limits |r_kf - r_k-1,f| <= delta_f on the Stage-2 face.
+
+    For every block f the smallest limit delta_f* that the Stage-2 face admits
+    for that block alone is computed. The limits are then imposed on all blocks
+    at once to see whether they are jointly attainable; if not, the smallest
+    common factor s >= 1 with |dr_f| <= s * delta_f* for all f is reported.
+    Finally a demand-scaled rule delta_f = t * mean(D) / D_f (larger blocks may
+    vary less) is solved for its smallest t. Every solution keeps lambda* and S*.
+    """
+    solution = solution or solve_three_stage(model)
+    pairs = temporal_pairs(model)
+    blocks = [u for u in model.user_ids if any(p[0][1] == u for p in pairs)]
+    by_block = {u: [p for p in pairs if p[0][1] == u] for u in blocks}
+    n = len(model.active_records)
+    rows_out = []
+    if not blocks:
+        return rows_out
+
+    # (a) each block alone
+    own = {}
+    for u in blocks:
+        records, rows, rhs, a_eq, b_eq, bounds = _face_lp(model, solution, 1)
+        rows = rows + _jump_rows(model, records, by_block[u], n, n + 1)
+        rhs = rhs + [0.0] * (2 * len(by_block[u]))
+        c = np.zeros(n + 1); c[n] = 1.0
+        res = linprog(c, A_ub=np.vstack(rows), b_ub=np.asarray(rhs), A_eq=a_eq, b_eq=b_eq,
+                      bounds=bounds + [(0.0, None)], method="highs", options=_HIGHS)
+        if not res.success:
+            raise RuntimeError(f"block limit LP failed for {u}: {res.message}")
+        own[u] = max(0.0, float(res.fun))
+
+    def common_factor(limits: dict[str, float]):
+        """Smallest s with |dr_f| <= s * limits[f] for all f (one scalar s)."""
+        records, rows, rhs, a_eq, b_eq, bounds = _face_lp(model, solution, 1)
+        index = {rec: i for i, rec in enumerate(records)}
+        for u in blocks:
+            for left, right in by_block[u]:
+                for sign in (1.0, -1.0):
+                    row = np.zeros(n + 1)
+                    row[index[right]] = sign
+                    row[index[left]] = -sign
+                    row[n] = -limits[u]
+                    rows.append(row)
+                    rhs.append(0.0)
+        c = np.zeros(n + 1); c[n] = 1.0
+        res = linprog(c, A_ub=np.vstack(rows), b_ub=np.asarray(rhs), A_eq=a_eq, b_eq=b_eq,
+                      bounds=bounds + [(0.0, None)], method="highs", options=_HIGHS)
+        if not res.success:
+            raise RuntimeError(f"common-factor LP failed: {res.message}")
+        return float(res.fun), {rec: float(res.x[i]) for i, rec in enumerate(records)}
+
+    # (b) all individual optima at once; blocks whose own limit is 0 get a tiny
+    # positive limit so that the factor stays finite
+    floor = 1e-6
+    s_joint, ratios_joint = common_factor({u: max(own[u], floor) for u in blocks})
+    # (c) demand-scaled rule delta_f = t * mean(D) / D_f
+    season = {u: sum(float(model.demand[k][u]) for k in model.periods) for u in blocks}
+    mean_d = sum(season.values()) / len(season)
+    t_scaled, ratios_scaled = common_factor({u: mean_d / season[u] for u in blocks})
+
+    joint_eval = evaluate(model, ratios_joint)
+    scaled_eval = evaluate(model, ratios_scaled)
+    for u in blocks:
+        jumps_joint = max(abs(ratios_joint[b] - ratios_joint[a]) for a, b in by_block[u])
+        jumps_scaled = max(abs(ratios_scaled[b] - ratios_scaled[a]) for a, b in by_block[u])
+        rows_out.append({
+            "benchmark": model.name, "block": u,
+            "seasonal_demand": season[u],
+            "own_minimum_limit": own[u],
+            "joint_factor_s": s_joint,
+            "max_jump_with_all_own_limits_scaled": jumps_joint,
+            "all_own_limits_jointly_attainable": bool(s_joint <= 1.0 + 1e-7),
+            "demand_scaled_rule_t": t_scaled,
+            "demand_scaled_limit": t_scaled * mean_d / season[u],
+            "max_jump_under_demand_scaled_rule": jumps_scaled,
+            "omega_ratio_joint": joint_eval["ratio"],
+            "omega_ratio_demand_scaled": scaled_eval["ratio"],
+        })
+    return rows_out

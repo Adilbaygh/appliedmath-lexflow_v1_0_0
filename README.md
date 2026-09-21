@@ -149,8 +149,8 @@ the manifest.
 |---|---|---|
 | Randomized robustness suite, bottleneck identification, Stage-3 activity | `run_analysis.py` (console view: `python bench/robustness_suite.py`) | `results/tables/csv/table_A3_robustness_*.csv` |
 | Comparison with alternative allocation rules | `run_analysis.py` | `results/tables/csv/table_9_rule_comparison*.csv` |
-| Alternative Stage-3 smoothness criteria | `run_analysis.py` | `results/tables/csv/table_10_smoothness_criteria*.csv` |
-| Service-weight sweep and weighting rules (synthetic weights) | `run_analysis.py` (console view: `python bench/weight_sweep.py`) | `results/tables/csv/table_A4_*.csv`, `table_A5_*.csv` |
+| Alternative Stage-3 smoothness criteria and block-specific variation limits | `run_analysis.py` | `results/tables/csv/table_10_*.csv` |
+| Service-weight sweep, five weighting rules and their winners and losers (synthetic weights) | `run_analysis.py` (console view: `python bench/weight_sweep.py`) | `results/tables/csv/table_A4_*.csv`, `table_A5_*.csv` |
 | Parameter perturbation of the controlled scenario | `python bench/perturbation.py` | `results/perturbation/` |
 | Stage-1 closed form versus LP, phase-resolved timing | `python bench/scale_timing.py` | `results/timing/scale_timing*.csv`, `environment.json` |
 | Wall-clock time of every allocation rule | `python bench/compare_rules.py` | `results/timing/rule_comparison_timing.csv` |

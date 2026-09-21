@@ -34,7 +34,13 @@ from .io import load_benchmark
 from .lexicographic import solve_three_stage
 from .operators import build_operator_exact
 from .comparison import run_comparison
-from .weights import weight_ratio_sweep, weighting_rules
+from .smoothing import block_variation_limits
+from .weights import (
+    weight_ratio_sweep,
+    weighting_rules,
+    weighting_rules_by_block,
+    weighting_rules_summary,
+)
 from .smoothing import attainment_summary as smoothing_attainment
 from .smoothing import cross_evaluation as smoothing_cross_evaluation
 from .robustness import generate_instances as generate_robustness_instances
@@ -418,7 +424,15 @@ def generate_results(project_root: str | Path) -> dict[str, object]:
     if "gone_abat_jap" in by_name:
         tables["table_A5_weighting_rules"] = pd.DataFrame(
             weighting_rules(by_name["gone_abat_jap"]))
+        tables["table_A5_weighting_rules_by_block"] = pd.DataFrame(
+            weighting_rules_by_block(by_name["gone_abat_jap"]))
+        tables["table_A5_weighting_rules_summary"] = pd.DataFrame(
+            weighting_rules_summary(by_name["gone_abat_jap"]))
     tables["table_10_smoothness_criteria"] = pd.DataFrame(smoothing_rows)
+    tables["table_10_block_variation_limits"] = pd.DataFrame([
+        row for model in models if len(model.periods) > 1
+        for row in block_variation_limits(model)
+    ])
     tables["table_10_smoothness_criteria_random_summary"] = pd.DataFrame(
         smoothing_attainment(smoothing_random))
     for stem, dataframe in tables.items():

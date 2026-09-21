@@ -77,7 +77,8 @@ def test_weight_tables_reproduce_appendix_a6() -> None:
     assert {(round(r["X1_stage3"], 6), round(r["X2_stage3"], 6)) for r in sweep} == {
         (12.0, 10.0), (12.8, 9.2), (13.6, 8.4)}
     rules = {r["rule"]: r for r in weighting_rules(_model("gone_abat_jap"))}
-    assert set(rules) == {"uniform", "synthetic_rank_1_to_20", "synthetic_two_classes"}
+    assert set(rules) == {"uniform", "synthetic_rank_1_to_20", "synthetic_two_classes",
+                          "demand_normalized", "synthetic_single_block_priority"}
     for r in rules.values():
         assert abs(r["lambda_star"] - 0.85) < 1e-9
         assert abs(r["minimum_ratio_stage3"] - 0.85) < 1e-7
@@ -96,3 +97,27 @@ def test_guarantee_rules_keep_lambda_on_independent_instances() -> None:
         rows = {r["rule"]: r for r in compare_model(model)}
         for rule in ("three_stage", "equal_proportional", "leximin"):
             assert rows[rule]["guarantee_kept"], (model.name, rule)
+
+
+def test_no_weighting_rule_pushes_a_block_below_the_guarantee() -> None:
+    from appliedmath_lexflow.weights import weighting_rules_summary
+
+    for row in weighting_rules_summary(_model("gone_abat_jap")):
+        assert row["lowest_ratio_any_block"] >= row["guarantee_lambda_star"] - 1e-7
+    rows = {r["rule"]: r for r in weighting_rules_summary(_model("gone_abat_jap"))}
+    assert rows["uniform"]["blocks_gaining"] == rows["uniform"]["blocks_losing"] == 0
+    assert rows["synthetic_single_block_priority"]["blocks_gaining"] >= 1
+
+
+def test_block_variation_limits() -> None:
+    from appliedmath_lexflow.smoothing import block_variation_limits
+
+    rows = {r["block"]: r for r in block_variation_limits(_model("temporal_lexicographic"))}
+    assert abs(rows["f1"]["own_minimum_limit"] - 0.075) < 1e-7
+    assert abs(rows["f2"]["own_minimum_limit"] - 0.15) < 1e-7
+    # the two individual minima cannot be attained together
+    assert not rows["f1"]["all_own_limits_jointly_attainable"]
+    assert rows["f1"]["joint_factor_s"] > 1.0
+    canal = block_variation_limits(_model("gone_abat_jap"))
+    assert len(canal) == 20
+    assert all(r["all_own_limits_jointly_attainable"] for r in canal)

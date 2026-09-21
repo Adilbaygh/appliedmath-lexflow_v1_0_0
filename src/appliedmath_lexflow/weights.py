@@ -61,15 +61,33 @@ def weight_ratio_sweep(model: Benchmark) -> list[dict[str, object]]:
     return rows
 
 
+def seasonal_demand(model: Benchmark) -> dict[str, Fraction]:
+    return {u: sum((model.demand[k][u] for k in model.periods), Fraction(0))
+            for u in model.user_ids}
+
+
 def rule_weights(model: Benchmark) -> dict[str, dict[str, Fraction]]:
     blocks = [u.user_id for u in model.users]
     half = len(blocks) // 2
+    season = seasonal_demand(model)
     return {
         "uniform": {b: Fraction(1) for b in blocks},
         "synthetic_rank_1_to_20": {b: Fraction(i + 1) for i, b in enumerate(blocks)},
         "synthetic_two_classes": {
             b: Fraction(1 if i < half else 3) for i, b in enumerate(blocks)},
+        # rule (v) of Section 2.6: removes the volume term from the objective
+        "demand_normalized": {b: Fraction(1) / season[b] for b in blocks},
+        # a contested, one-sided choice: the block with the lowest delivered share
+        # under uniform weights receives 100 times the weight of every other block
+        "synthetic_single_block_priority": {
+            b: Fraction(100 if b == _least_served(model) else 1) for b in blocks},
     }
+
+
+def _least_served(model: Benchmark) -> str:
+    season = seasonal_demand(model)
+    x = delivered(model, solve_three_stage(model).stage3.ratios)
+    return min(model.user_ids, key=lambda u: (x[u] / float(season[u]), u))
 
 
 RULE_DESCRIPTIONS = {
@@ -80,6 +98,13 @@ RULE_DESCRIPTIONS = {
     "synthetic_two_classes": (
         "SYNTHETIC w_f = 1 (first ten blocks) or 3 (last ten); illustrates an "
         "administrative priority rule (iv); not an observed priority list"),
+    "demand_normalized": (
+        "w_f = 1 / D_f, D_f the seasonal demand (rule (v) of Section 2.6); "
+        "computed from the published demands"),
+    "synthetic_single_block_priority": (
+        "SYNTHETIC w = 100 for the block least served under uniform weights, 1 for "
+        "all others; a deliberately "
+        "one-sided weighting used to show what a contested choice can and cannot do"),
 }
 
 
@@ -92,10 +117,63 @@ def weighting_rules(model: Benchmark) -> list[dict[str, object]]:
         rows.append({
             "rule": key,
             "description": RULE_DESCRIPTIONS[key],
-            "weights_are_observed_data": "no" if key != "uniform" else "not applicable",
+            "weights_are_observed_data": {
+                "uniform": "not applicable",
+                "demand_normalized": "derived from the published demands",
+            }.get(key, "no (synthetic)"),
             "lambda_star": float(solve_stage1_closed_form(m).lambda_star),
             "minimum_ratio_stage3": sol.stage3.minimum_ratio,
             "stage2_weighted_satisfaction": sol.stage2.weighted_satisfaction,
             "omega_stage3": sol.stage3.temporal_variation,
         })
     return rows
+
+
+def weighting_rules_by_block(model: Benchmark) -> list[dict[str, object]]:
+    """Winners and losers of every rule, block by block, against uniform weights.
+
+    For each rule and block: seasonal delivery X_f at the Stage-3 optimum, its
+    change against the uniform rule, and the block's lowest period ratio, which
+    can never fall below lambda* whatever the weights.
+    """
+    season = seasonal_demand(model)
+    solved = {}
+    for key, w in rule_weights(model).items():
+        m = reweight(model, w)
+        solved[key] = (w, solve_three_stage(m).stage3.ratios)
+    base = delivered(model, solved["uniform"][1])
+    rows = []
+    for key, (w, ratios) in solved.items():
+        x = delivered(model, ratios)
+        for u in model.user_ids:
+            lowest = min(ratios[(k, u)] for k in model.periods if (k, u) in ratios)
+            change = x[u] - base[u]
+            rows.append({
+                "rule": key, "block": u, "weight": float(w[u]),
+                "seasonal_demand": float(season[u]),
+                "delivery_stage3": x[u],
+                "delivery_share_of_demand": x[u] / float(season[u]),
+                "change_vs_uniform": change,
+                "relative_change_vs_uniform": change / base[u] if base[u] > 0 else 0.0,
+                "lowest_period_ratio": lowest,
+            })
+    return rows
+
+
+def weighting_rules_summary(model: Benchmark) -> list[dict[str, object]]:
+    rows = weighting_rules_by_block(model)
+    lam = float(solve_stage1_closed_form(model).lambda_star)
+    out = []
+    for key in rule_weights(model):
+        grp = [r for r in rows if r["rule"] == key]
+        rel = [float(r["relative_change_vs_uniform"]) for r in grp]
+        out.append({
+            "rule": key,
+            "blocks_gaining": sum(1 for v in rel if v > 1e-7),
+            "blocks_losing": sum(1 for v in rel if v < -1e-7),
+            "largest_relative_gain": max(rel),
+            "largest_relative_loss": min(rel),
+            "lowest_ratio_any_block": min(float(r["lowest_period_ratio"]) for r in grp),
+            "guarantee_lambda_star": lam,
+        })
+    return out

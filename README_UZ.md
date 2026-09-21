@@ -204,8 +204,8 @@ python -m pytest -p no:cacheprovider
 |---|---|---|
 | Тасодифий синов тўплами, тор жойни аниқлаш, Stage-3 фаоллиги | `run_analysis.py` (экранда: `python bench/robustness_suite.py`) | `results/tables/csv/table_A3_robustness_*.csv` |
 | Муқобил тақсимот қоидалари билан солиштириш | `run_analysis.py` | `results/tables/csv/table_9_rule_comparison*.csv` |
-| Stage 3 нинг муқобил силлиқлик мезонлари | `run_analysis.py` | `results/tables/csv/table_10_smoothness_criteria*.csv` |
-| Вазнлар таҳлили (синтетик вазнлар) | `run_analysis.py` (экранда: `python bench/weight_sweep.py`) | `results/tables/csv/table_A4_*.csv`, `table_A5_*.csv` |
+| Stage 3 нинг муқобил силлиқлик мезонлари ва блокларга хос чекловлар | `run_analysis.py` | `results/tables/csv/table_10_*.csv` |
+| Вазнлар таҳлили: бешта қоида, ютган ва ютқазган блоклар (синтетик вазнлар) | `run_analysis.py` (экранда: `python bench/weight_sweep.py`) | `results/tables/csv/table_A4_*.csv`, `table_A5_*.csv` |
 | Controlled scenario параметрлари пертурбацияси | `python bench/perturbation.py` | `results/perturbation/` |
 | Ёпиқ формула ва LP вақти, босқичма-босқич | `python bench/scale_timing.py` | `results/timing/scale_timing*.csv`, `environment.json` |
 | Ҳар бир қоиданинг ишлаш вақти | `python bench/compare_rules.py` | `results/timing/rule_comparison_timing.csv` |
