@@ -52,6 +52,8 @@ from .robust import (
     stage2_variation_bounds,
 )
 from .scales import verify_scale_suite
+from .scenario import period_parameters as scenario_period_parameters
+from .scenario import reach_ratios as scenario_reach_ratios
 from .stage1 import solve_stage1_closed_form, solve_stage1_lp
 from .tables import write_table
 from .verification import maximum_physical_violation, verify_operator_exact
@@ -422,6 +424,11 @@ def generate_results(project_root: str | Path) -> dict[str, object]:
         tables["table_A4_weight_ratio_sweep"] = pd.DataFrame(
             weight_ratio_sweep(by_name["temporal_lexicographic"]))
     if "gone_abat_jap" in by_name:
+        # Table A2 and the reach-capacity statements of Appendix A.4.
+        tables["table_A2_controlled_scenario_periods"] = pd.DataFrame(
+            scenario_period_parameters(by_name["gone_abat_jap"]))
+        tables["table_A2_controlled_scenario_reach_ratios"] = pd.DataFrame(
+            scenario_reach_ratios(by_name["gone_abat_jap"]))
         tables["table_A5_weighting_rules"] = pd.DataFrame(
             weighting_rules(by_name["gone_abat_jap"]))
         tables["table_A5_weighting_rules_by_block"] = pd.DataFrame(

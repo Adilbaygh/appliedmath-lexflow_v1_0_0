@@ -114,7 +114,7 @@ Otherwise, a feasible allocation that weakly increases all $X_f$ and strictly in
 
 If Stage 3 enforces the exact Stage-1 floor and exact Stage-2 optimum, then its solution remains Stage-2 optimal and therefore Pareto efficient. Its temporal variation is no larger than the variation of the Stage-2 allocation used as a feasible starting point.
 
-## Proposition 2. When Stage 3 is redundant
+## Remark 2. When Stage 3 is redundant (manuscript Section 3.3)
 
 Let $\mathcal R_2^{\ast}$ be the Stage-2 optimal face. Stage 3 changes the temporal variation of a Stage-2 optimum $r^{(2)}$ only if $\Omega$ is not constant on $\mathcal R_2^{\ast}$; in particular, if $\mathcal R_2^{\ast}$ is a single point, then $r^{(3)}=r^{(2)}$ and Stage 3 is redundant. The face is a single point whenever the Stage-2 objective is not parallel to any face of $\mathcal R_1^{\ast}$ of positive dimension, which is the generic case for heterogeneous weights and efficiencies; ties in $w_fd_{kf}$ relative to the route coefficients of a binding resource, as produced by uniform weights and a small number of lining classes, create a face of positive dimension.
 

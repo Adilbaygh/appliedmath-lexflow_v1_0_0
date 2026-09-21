@@ -176,7 +176,7 @@ python -m pytest -p no:cacheprovider
 
 Жорий версияда:
 
-- 75/75 автоматик тест PASS;
+- 76/76 автоматик тест PASS;
 - 6 та детерминистик benchmark: 5 exact синтетик ва 1 controlled scenario;
 - $\max|\lambda^{\mathrm{LP}}-\lambda^{\mathrm{cf}}|\approx1.11\times10^{-16}$;
 - exact operator–balance фарқи $0$;
@@ -214,6 +214,17 @@ python -m pytest -p no:cacheprovider
 қайта ечади; у натижаларнинг сезгирлик таҳлили, стохастик ёки робаст
 формулировка эмас.
 
+
+## Мақоладаги жадвал ва расмларнинг манба файллари
+
+Файл номлари пакетнинг ўз рақамлашига амал қилади. Мақоладаги жадвал рақами
+билан файл номи мослиги README.md даги "Where each table and figure of the
+manuscript comes from" жадвалида тўлиқ келтирилган (масалан, мақоладаги
+Table 4 → `table_5_invariant_variation_and_price_of_fairness.csv`, Table 8 →
+`table_A3_robustness_suite.csv`, Table 10 →
+`results/perturbation/csv/perturbation_summary.csv`, Table A2 →
+`table_A2_controlled_scenario_periods.csv`, Table A6 →
+`table_10_smoothness_criteria.csv`).
 
 ## Tkinter текшируви
 
