@@ -60,7 +60,7 @@ SciPy HiGHS solves the three LP stages. The numerical layer must be checked agai
     a single point;
 18. in the rule comparison (`comparison.py`) the three-stage, equal-proportional
     and leximin allocations keep the guarantee $\lambda^{\ast}$ on every
-    benchmark and every randomized instance with independent capacities.
+    benchmark and every randomized instance of the second seed group.
 
 ## Publication outputs
 

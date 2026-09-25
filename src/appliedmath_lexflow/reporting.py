@@ -391,13 +391,17 @@ def generate_results(project_root: str | Path) -> dict[str, object]:
     tables["table_A3_robustness_suite"] = pd.DataFrame(robustness_summary)
     tables["table_A3_robustness_instances"] = pd.DataFrame(robustness_rows)
     # Comparison with alternative allocation rules (reviewer request): the six
-    # benchmarks individually, and the 200 randomized instances whose capacities
-    # are drawn independently of the loads. Times are measured separately by
-    # bench/compare_rules.py because they are not byte-reproducible.
+    # benchmarks individually, and the 200 randomized instances of the second
+    # seed group, that is, every family whose capacities are not prescribed
+    # multiples of their own loads. The selection is deliberately made on
+    # "not prescribed" rather than on the descriptive label "independent", so
+    # that relabelling a family never silently changes the comparison set.
+    # Times are measured separately by bench/compare_rules.py because they are
+    # not byte-reproducible.
     comparison = run_comparison(
         models,
         [m for fam, m in generate_robustness_instances()
-         if fam.capacity_rule == "independent"],
+         if fam.capacity_rule != "prescribed"],
     )
     tables["table_9_rule_comparison"] = pd.DataFrame(comparison.per_benchmark)
     tables["table_9_rule_comparison_random_summary"] = pd.DataFrame(
@@ -406,7 +410,7 @@ def generate_results(project_root: str | Path) -> dict[str, object]:
         comparison.random_per_instance)
     # Alternative Stage-3 smoothness criteria (reviewer request): cross
     # evaluation on the two multi-period benchmarks and, over the randomized
-    # instances with independent capacities, the share of the attainable
+    # instances of the second seed group, the share of the attainable
     # reduction of each criterion that optimizing another criterion delivers.
     smoothing_rows = [
         row for model in models if len(model.periods) > 1
@@ -414,7 +418,7 @@ def generate_results(project_root: str | Path) -> dict[str, object]:
     ]
     smoothing_random = [
         row for fam, m in generate_robustness_instances()
-        if fam.capacity_rule == "independent"
+        if fam.capacity_rule != "prescribed"
         for row in smoothing_cross_evaluation(m)
     ]
     # Service-weight sensitivity (Appendix A.6): Table A4 on the three-period

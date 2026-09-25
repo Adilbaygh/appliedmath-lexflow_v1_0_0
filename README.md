@@ -121,7 +121,8 @@ A run is accepted only when:
 - Stage 3 preserves the Stage-1 floor and Stage-2 objective within tolerance;
 - Stage 3 does not increase consecutive-period variation;
 - on all 400 randomized instances (seven families with prescribed capacity
-  ratios and three with capacities drawn independently of the loads) the same
+  ratios, two with capacities drawn independently of their own loads and one
+  with a constant seasonal supply) the same
   thresholds hold, and the bottleneck named by the closed form is confirmed by
   the Stage-1 LP alone (sufficiency and necessity tests).
 

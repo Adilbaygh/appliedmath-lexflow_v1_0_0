@@ -5,12 +5,14 @@ The generator, the checks and the per-family summary live in
 same results as ``results/tables/{csv,excel}/table_A3_robustness_*``. This
 script prints them for a quick look.
 
-Nine families are drawn. The first seven (seed 20260916) set every capacity as a
+Ten families are drawn. The first seven (seed 20260916) set every capacity as a
 prescribed multiple of the full-demand gross load, so the binding resource and
 lambda* are known in advance: they test agreement between implementations.
-The last two (seed 20260921) draw capacities independently of the loads: they
-test whether the closed form identifies a bottleneck that was not planted, and
-how often Stage 3 changes the Stage-2 allocation.
+The last three (seed 20260921) do not. Two of them draw the source allocations
+and the reach capacities independently of their own loads and test whether the
+closed form identifies a bottleneck that was not planted; the third holds a
+constant seasonal supply against period-varying demand. All three record how
+often Stage 3 changes the Stage-2 allocation.
 
 Run from the repository root:
 

@@ -6,8 +6,10 @@ Changes made for the second report of the third reviewer. The formulation,
 Theorems 1 and 2 and every published benchmark value are unchanged.
 
 - `robustness.py` replaces the body of `bench/robustness_suite.py`. The seven
-  families of 0.5.1 are reproduced instance by instance; three new families
-  draw source and reach capacities independently of the loads. Every instance
+  families of 0.5.1 are reproduced instance by instance; three new families no
+  longer set each capacity as a prescribed multiple of its own load, two of them
+  by drawing the source allocations and the reach capacities independently of
+  their own loads and one by holding a constant seasonal supply. Every instance
   is checked against the Section 2.9 thresholds (previously the suite used its
   own), with G3 and G4 reported separately and a relative physical residual
   G5r added. The bottleneck named by the closed form is confirmed by the

@@ -75,9 +75,12 @@ Record dependency versions, platform information, input SHA-256 hashes, output S
 
 Draw 400 instances from ten families (`robustness.py`). Seven families (seed
 20260916) prescribe every capacity as a multiple of its full-demand load and
-test agreement between implementations. Three families (seed 20260921) draw
-source and reach capacities independently of the loads, so the bottleneck is not
-planted. On every instance require the gates G1 and G3–G8 with the thresholds of
+test agreement between implementations. Three families (seed 20260921) no longer set each
+capacity as a prescribed multiple of its own load. Two of them draw the source
+allocations and the reach capacities independently of their own loads, so the
+bottleneck is not planted; the third holds a constant seasonal supply against
+period-varying demand and gives each reach 1.2-2.0 times its own largest load,
+so there the source is the binding class by construction. On every instance require the gates G1 and G3–G8 with the thresholds of
 Section 2.9 and the bottleneck-identification test of gate 16 of the
 implementation specification, and record whether the Stage-2 face is a single
 point and whether Stage 3 lowers $\Omega$.

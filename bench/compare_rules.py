@@ -6,7 +6,7 @@ wall-clock time of every rule, which is machine dependent:
 
 * on each of the six benchmarks, every rule is run REPEATS times after one
   warm-up and the median and interquartile range are reported;
-* on the 200 randomized instances with independent capacities, every rule is
+* on the 200 randomized instances of the second seed group, every rule is
   run once per instance and the median over instances is reported.
 
 Output: results/timing/rule_comparison_timing.csv (and environment.json).
@@ -59,8 +59,10 @@ def main() -> int:
                 "q1_ms": q[0], "q3_ms": q[2], "min_ms": min(times),
             })
             print(f"{model.name:34} {key:26} {statistics.median(times):10.2f} ms")
+    # Same selection as reporting.py: the second seed group, i.e. every family
+    # whose capacities are not prescribed multiples of their own loads.
     random_models = [m for fam, m in generate_instances()
-                     if fam.capacity_rule == "independent"]
+                     if fam.capacity_rule != "prescribed"]
     for key, fn in rules().items():
         times = [_ms(fn, m) for m in random_models]
         q = statistics.quantiles(times, n=4, method="inclusive")

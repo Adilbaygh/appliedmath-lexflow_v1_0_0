@@ -7,7 +7,7 @@ procedure scales on the largest instance reported in the manuscript
 (1023 nodes, 1022 reaches, 500 users, 4 periods).  It is deliberately
 **not** used as evidence about the behaviour of the method under realistic
 capacity structures; the instance families with capacities drawn
-independently of the loads (Section 4.10, Table 8, Appendix A.5) serve that
+independently of their own loads (Section 4.10, Table 8, Appendix A.5) serve that
 purpose.
 
 Construction rule (fully deterministic; no random number generator)

@@ -11,13 +11,20 @@ The suite answers two different questions and keeps them apart.
    unknown bottleneck, and because every resource of a class carries the same
    ratio they leave Stage 3 almost nothing to choose between.
 
-2. *Bottleneck identification and Stage-3 activity under independent
-   capacities.* Three further families (seed 20260921) draw the source and
-   reach capacities independently of the loads, so that the binding resource is
-   not known in advance. Two use canal-like data (efficiencies from a few lining
-   classes, uniform weights), one uses generic data (a fine efficiency grid and
-   heterogeneous weights), which separates the effect of ties in the data on
-   the size of the Stage-2 optimal face.
+2. *Bottleneck identification and Stage-3 activity beyond prescribed ratios.*
+   Three further families (seed 20260921) no longer set each capacity as a
+   prescribed multiple of its own load. In two of them (140 instances) the
+   source allocations and the reach capacities are drawn independently of their
+   own loads, so the binding resource is not known in advance; one uses
+   canal-like data (efficiencies from a few lining classes, uniform weights)
+   and the other generic data (a fine efficiency grid and heterogeneous
+   weights), which separates the effect of ties in the data on the size of the
+   Stage-2 optimal face. The third family (``seasonal_supply``, 60 instances)
+   holds one seasonal source allocation against period-varying demand and gives
+   each reach 1.2-2.0 times its own largest load; the source is therefore the
+   binding class by construction there, and that family tests seasonal supply
+   rather than bottleneck identification. Its capacity rule is labelled
+   ``seasonal`` rather than ``independent`` for that reason.
 
 On every instance, in addition to the acceptance gates, the suite identifies
 the bottleneck in two independent ways: every resource the closed form names as
@@ -282,7 +289,7 @@ class Family:
     key: str
     label: str
     count: int
-    capacity_rule: str  # "prescribed" or "independent"
+    capacity_rule: str  # "prescribed", "independent" or "seasonal"
     kwargs: dict = field(default_factory=dict)
     builder: Callable[..., Benchmark] | None = None
 
@@ -330,7 +337,7 @@ FAMILIES: tuple[Family, ...] = (
            dict(eta_choices=ETA_COARSE, weight_choices=W_UNIT),
            builder=independent_instance),
     Family("seasonal_supply", "Constant seasonal supply, varying demand", 60,
-           "independent",
+           "seasonal",
            dict(eta_choices=ETA_COARSE, weight_choices=W_UNIT),
            builder=seasonal_supply_instance),
     # Generic data: fine efficiency grid and heterogeneous weights, so that ties
