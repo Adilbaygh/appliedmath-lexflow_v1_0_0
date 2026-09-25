@@ -1,5 +1,32 @@
 # Model development log
 
+## v0.5.3
+
+Changes made for the third and fourth review rounds. The formulation, Theorems 1
+and 2, every benchmark value and every published table are unchanged; this
+release corrects what the package reports about itself and adds two measurements
+the reports asked for.
+
+- `perturbation.py` records three residuals of the accepted Stage-3 solution with
+  every draw: the departure from the Stage-2 optimum, the shortfall below the
+  Stage-1 guarantee and the largest excess of a source or reach load over its
+  capacity relative to that capacity. `summarize` reports the maximum of each
+  over a scenario and, separately, over the draws that needed a relaxed
+  feasibility tolerance. Over the 1000 draws the maxima are 1.4e-15, 4.6e-09 and
+  2.9e-11, each attained on one of the 35 relaxed draws and each below the
+  tolerance that was relaxed;
+- `lexicographic.py`: `solve_three_stage` takes `verify_stage1_lp`. The Stage-1
+  LP verifies the closed form and is not a step of the allocation, so
+  `bench/compare_rules.py` now times the hierarchy both ways, 10.7 ms with the
+  verification LP and 7.4 ms without;
+- `robustness.py`: `lp_bottleneck_test` takes the comparison value from the
+  Stage-1 LP instead of the closed form, which is what the article claims the
+  two tests do. The closed form supplies the prediction under test and nothing
+  else. No value under `results/` changes;
+- `README.md` reported 76 automated tests, a count left over from before the
+  four data-provenance tests were added. The suite has 80, of which 42 cover the
+  allocation model of the article.
+
 ## v0.5.2
 
 Changes made for the second report of the third reviewer. The formulation,

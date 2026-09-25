@@ -15,4 +15,4 @@ __all__ = [
     "solve_three_stage",
 ]
 
-__version__ = "0.5.2"
+__version__ = "0.5.3"
