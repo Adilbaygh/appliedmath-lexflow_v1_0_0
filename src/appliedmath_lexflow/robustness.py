@@ -332,7 +332,7 @@ FAMILIES: tuple[Family, ...] = (
                tie_margin=Fraction(1, 10**12))),
     # Canal-like data: efficiencies from a few lining classes, uniform weights
     # (the neutral default rule (i) of Section 2.6).
-    Family("independent", "Independent capacities, lining classes, uniform weights",
+    Family("independent", "Untied capacities, lining classes, uniform weights",
            80, "independent",
            dict(eta_choices=ETA_COARSE, weight_choices=W_UNIT),
            builder=independent_instance),
@@ -343,7 +343,7 @@ FAMILIES: tuple[Family, ...] = (
     # Generic data: fine efficiency grid and heterogeneous weights, so that ties
     # between users are unlikely and the Stage-2 optimum is usually a vertex.
     Family("independent_generic",
-           "Independent capacities, generic efficiencies and weights", 60,
+           "Untied capacities, generic efficiencies and weights", 60,
            "independent",
            dict(eta_choices=ETA_FINE, weight_choices=W_WIDE),
            builder=independent_instance),

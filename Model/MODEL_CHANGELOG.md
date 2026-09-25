@@ -1,5 +1,18 @@
 # Model development log
 
+## v0.5.5
+
+One terminology change, so that the article and the package name the same thing
+the same way. The two families whose capacities are not prescribed multiples of
+their own loads were labelled "Independent capacities"; the article now calls
+them untied capacities, because the common scale of those capacities is the
+median full-demand load and only the per-resource factors are drawn
+independently. The labels of `robustness.py` follow.
+
+Only the `family_label` column of the two Table A3 files changes: 142 lines,
+none of them differing by anything other than the label. No family key, no
+selection rule and no computed value is affected.
+
 ## v0.5.4
 
 Documentation corrections found by the fifth review round. No model, benchmark
