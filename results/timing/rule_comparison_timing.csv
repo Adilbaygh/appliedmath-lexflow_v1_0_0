@@ -1,0 +1,50 @@
+set,rule,rule_label,runs,median_ms,q1_ms,q3_ms,min_ms
+branching_shared_edge_bottleneck,three_stage,Three-stage lexicographic (proposed),10,6.955350050702691,6.55352501780726,7.695375039475039,6.036599981598556
+branching_shared_edge_bottleneck,total_delivery_max,Total-delivery maximization,10,2.0211500232107937,1.970599958440289,2.093699964461848,1.951600075699389
+branching_shared_edge_bottleneck,equal_proportional,Equal proportional allocation,10,0.13780000153928995,0.13642499106936157,0.13927501277066767,0.13559998478740454
+branching_shared_edge_bottleneck,weighted_sum_balanced,"Weighted single objective (35), (a,b,c) = (1,1,1)",10,2.4889499763958156,2.185100020142272,2.6815500459633768,2.085500047542155
+branching_shared_edge_bottleneck,weighted_sum_efficiency,"Weighted single objective (35), (a,b,c) = (1,5,1)",10,2.709500025957823,2.5017999578267336,2.8049749962519854,2.0894999615848064
+branching_shared_edge_bottleneck,weighted_sum_guarantee,"Weighted single objective (35), (a,b,c) = (5,1,1)",10,2.285950002260506,2.146875049220398,2.455449983244762,2.091099973767996
+branching_shared_edge_bottleneck,leximin,Full leximin (progressive filling),10,0.2273500431329012,0.22542497026734054,0.22990000434219837,0.22320006974041462
+chain_source_bottleneck,three_stage,Three-stage lexicographic (proposed),10,5.311200045980513,5.197174992645159,5.4325500095728785,5.073199979960918
+chain_source_bottleneck,total_delivery_max,Total-delivery maximization,10,2.1920999279245734,2.1619999897666276,2.2436750296037644,1.8530000234022737
+chain_source_bottleneck,equal_proportional,Equal proportional allocation,10,0.05460000829771161,0.05449997843243182,0.05477503873407841,0.05389994475990534
+chain_source_bottleneck,weighted_sum_balanced,"Weighted single objective (35), (a,b,c) = (1,1,1)",10,2.0363000221550465,1.9844499474857002,2.0562500576488674,1.8616999732330441
+chain_source_bottleneck,weighted_sum_efficiency,"Weighted single objective (35), (a,b,c) = (1,5,1)",10,2.0354000153020024,1.9638250232674181,2.1351000177673995,1.8188999965786934
+chain_source_bottleneck,weighted_sum_guarantee,"Weighted single objective (35), (a,b,c) = (5,1,1)",10,1.7317000310868025,1.70497500221245,1.7565749876666814,1.6732000513002276
+chain_source_bottleneck,leximin,Full leximin (progressive filling),10,0.07499998901039362,0.07472498691640794,0.0753499916754663,0.07449998520314693
+gone_abat_jap,three_stage,Three-stage lexicographic (proposed),10,177.60624998481944,176.15072496118955,180.3708000225015,174.62629999499768
+gone_abat_jap,total_delivery_max,Total-delivery maximization,10,49.46964996634051,48.91422498621978,49.94327499298379,48.83250000420958
+gone_abat_jap,equal_proportional,Equal proportional allocation,10,45.313550042919815,45.065849961247295,45.67197497817688,44.56529999151826
+gone_abat_jap,weighted_sum_balanced,"Weighted single objective (35), (a,b,c) = (1,1,1)",10,75.70404995931312,73.29025006038137,79.03910000459291,72.19039998017251
+gone_abat_jap,weighted_sum_efficiency,"Weighted single objective (35), (a,b,c) = (1,5,1)",10,73.82219994906336,73.0621250695549,79.91110000875778,72.61690008454025
+gone_abat_jap,weighted_sum_guarantee,"Weighted single objective (35), (a,b,c) = (5,1,1)",10,73.12445004936308,72.79159995960072,73.49427495501004,72.35450006555766
+gone_abat_jap,leximin,Full leximin (progressive filling),10,3077.258499979507,3068.956074945163,3084.1589749907143,3064.2127000028268
+star_edge_bottleneck,three_stage,Three-stage lexicographic (proposed),10,5.421249952632934,5.346975027350709,5.527875007828698,5.2504000486806035
+star_edge_bottleneck,total_delivery_max,Total-delivery maximization,10,1.9269500044174492,1.9095749885309488,1.9558000203687698,1.7607000190764666
+star_edge_bottleneck,equal_proportional,Equal proportional allocation,10,0.063000014051795,0.06292498437687755,0.06335001671686769,0.06250001024454832
+star_edge_bottleneck,weighted_sum_balanced,"Weighted single objective (35), (a,b,c) = (1,1,1)",10,1.998600026126951,1.985674985917285,2.0051499304827303,1.8901999574154615
+star_edge_bottleneck,weighted_sum_efficiency,"Weighted single objective (35), (a,b,c) = (1,5,1)",10,2.0145499729551375,1.9910000264644623,2.0429000724107027,1.9398999866098166
+star_edge_bottleneck,weighted_sum_guarantee,"Weighted single objective (35), (a,b,c) = (5,1,1)",10,1.9938499899581075,1.9849499803967774,2.013400080613792,1.9395999843254685
+star_edge_bottleneck,leximin,Full leximin (progressive filling),10,0.11690001701936126,0.11664998601190746,0.11954997899010777,0.116499955765903
+temporal_lexicographic,three_stage,Three-stage lexicographic (proposed),10,7.057050010189414,6.931624986464158,7.128225028282031,6.494299974292517
+temporal_lexicographic,total_delivery_max,Total-delivery maximization,10,2.218250010628253,2.2122749651316553,2.288749994477257,2.1498999558389187
+temporal_lexicographic,equal_proportional,Equal proportional allocation,10,0.11924997670575976,0.1191999763250351,0.11957509559579194,0.11900009121745825
+temporal_lexicographic,weighted_sum_balanced,"Weighted single objective (35), (a,b,c) = (1,1,1)",10,2.467599930241704,2.4550000380259007,2.4978250439744443,2.4290999863296747
+temporal_lexicographic,weighted_sum_efficiency,"Weighted single objective (35), (a,b,c) = (1,5,1)",10,2.4427500320598483,2.437075017951429,2.4595749855507165,2.3400000063702464
+temporal_lexicographic,weighted_sum_guarantee,"Weighted single objective (35), (a,b,c) = (5,1,1)",10,2.457150025293231,2.4428249744232744,2.479199960362166,2.4377000518143177
+temporal_lexicographic,leximin,Full leximin (progressive filling),10,0.3208499983884394,0.3194499877281487,0.32422502408735454,0.317899975925684
+tie_bottleneck,three_stage,Three-stage lexicographic (proposed),10,6.397349992766976,6.153175054350868,6.450199958635494,6.084599997848272
+tie_bottleneck,total_delivery_max,Total-delivery maximization,10,2.0641000010073185,2.0601249707397074,2.078975026961416,2.0575999515131116
+tie_bottleneck,equal_proportional,Equal proportional allocation,10,0.06265001138672233,0.06237492198124528,0.06280001252889633,0.06220000796020031
+tie_bottleneck,weighted_sum_balanced,"Weighted single objective (35), (a,b,c) = (1,1,1)",10,2.2258000099100173,2.2205750283319503,2.2412750986404717,2.141400007531047
+tie_bottleneck,weighted_sum_efficiency,"Weighted single objective (35), (a,b,c) = (1,5,1)",10,2.2212499752640724,2.1795000066049397,2.2853250557091087,2.1497999550774693
+tie_bottleneck,weighted_sum_guarantee,"Weighted single objective (35), (a,b,c) = (5,1,1)",10,2.2396499989554286,2.223350020358339,2.2449750103987753,2.0806000102311373
+tie_bottleneck,leximin,Full leximin (progressive filling),10,0.09004998719319701,0.08917506784200668,0.09034998947754502,0.08839997462928295
+randomized independent capacities (200 instances),three_stage,Three-stage lexicographic (proposed),200,12.289699981920421,9.730749996379018,16.38157502748072,6.005500094033778
+randomized independent capacities (200 instances),total_delivery_max,Total-delivery maximization,200,3.5111000179313123,2.908025053329766,4.69112501014024,2.0244999323040247
+randomized independent capacities (200 instances),equal_proportional,Equal proportional allocation,200,1.3997999485582113,0.78422503429465,2.5517499598208815,0.1740999286994338
+randomized independent capacities (200 instances),weighted_sum_balanced,"Weighted single objective (35), (a,b,c) = (1,1,1)",200,4.322000022511929,3.470550029305741,5.940124945482239,2.279500011354685
+randomized independent capacities (200 instances),weighted_sum_efficiency,"Weighted single objective (35), (a,b,c) = (1,5,1)",200,4.239400033839047,3.436200029682368,5.846000014571473,2.0750000840052962
+randomized independent capacities (200 instances),weighted_sum_guarantee,"Weighted single objective (35), (a,b,c) = (5,1,1)",200,4.284249967895448,3.49799997638911,5.891775042982772,2.1807000739499927
+randomized independent capacities (200 instances),leximin,Full leximin (progressive filling),200,7.792800024617463,3.4976249444298446,18.92590001807548,0.45819999650120735

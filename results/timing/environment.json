@@ -1,0 +1,14 @@
+{
+  "cpu": "AMD Ryzen 5 5500U with Radeon Graphics",
+  "logical_cpus": 12,
+  "os": "Windows-10-10.0.19045-SP0",
+  "python": "3.13.5",
+  "numpy": "2.3.5",
+  "scipy": "1.17.0",
+  "solver": "HiGHS via scipy.optimize.linprog(method='highs')",
+  "timer": "time.perf_counter, single process, single thread of Python",
+  "repeats_per_phase": 30,
+  "warmup_runs": 3,
+  "statistics": "median, interquartile range (Q1-Q3) and minimum",
+  "build_excluded": true
+}

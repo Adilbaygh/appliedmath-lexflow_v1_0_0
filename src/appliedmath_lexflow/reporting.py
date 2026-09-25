@@ -33,12 +33,27 @@ from .figures import (
 from .io import load_benchmark
 from .lexicographic import solve_three_stage
 from .operators import build_operator_exact
+from .comparison import run_comparison
+from .smoothing import block_variation_limits
+from .weights import (
+    weight_ratio_sweep,
+    weighting_rules,
+    weighting_rules_by_block,
+    weighting_rules_summary,
+)
+from .smoothing import attainment_summary as smoothing_attainment
+from .smoothing import cross_evaluation as smoothing_cross_evaluation
+from .robustness import generate_instances as generate_robustness_instances
+from .robustness import run_suite as run_robustness_suite
+from .robustness import summarize as summarize_robustness_suite
 from .robust import (
     price_of_fairness,
     solve_leximin,
     stage2_variation_bounds,
 )
 from .scales import verify_scale_suite
+from .scenario import period_parameters as scenario_period_parameters
+from .scenario import reach_ratios as scenario_reach_ratios
 from .stage1 import solve_stage1_closed_form, solve_stage1_lp
 from .tables import write_table
 from .verification import maximum_physical_violation, verify_operator_exact
@@ -85,6 +100,12 @@ def _reset_generated_directories(output_root: Path) -> list[str]:
                 "gui_exports",
                 "synthetic_scale_500u_1022e_4p",
                 "investment",
+                # wall-clock measurements written by bench/scale_timing.py and
+                # bench/compare_rules.py; machine dependent, so not regenerated
+                "timing",
+                # parameter-perturbation study written by bench/perturbation.py
+                # (deterministic, but about five minutes long)
+                "perturbation",
             }:
                 continue
             try:
@@ -362,6 +383,65 @@ def generate_results(project_root: str | Path) -> dict[str, object]:
         "table_7_scale_verification": pd.DataFrame(scale_rows),
         "table_8_weight_sensitivity": pd.DataFrame(weight_rows),
     }
+    # Randomized robustness suite (Section 4.10, Appendix A.5): one row per
+    # instance and the per-family summary reported as Table A3. The instances
+    # are drawn from fixed seeds, so both tables are deterministic.
+    robustness_rows = run_robustness_suite()
+    robustness_summary = summarize_robustness_suite(robustness_rows)
+    tables["table_A3_robustness_suite"] = pd.DataFrame(robustness_summary)
+    tables["table_A3_robustness_instances"] = pd.DataFrame(robustness_rows)
+    # Comparison with alternative allocation rules (reviewer request): the six
+    # benchmarks individually, and the 200 randomized instances whose capacities
+    # are drawn independently of the loads. Times are measured separately by
+    # bench/compare_rules.py because they are not byte-reproducible.
+    comparison = run_comparison(
+        models,
+        [m for fam, m in generate_robustness_instances()
+         if fam.capacity_rule == "independent"],
+    )
+    tables["table_9_rule_comparison"] = pd.DataFrame(comparison.per_benchmark)
+    tables["table_9_rule_comparison_random_summary"] = pd.DataFrame(
+        comparison.random_summary)
+    tables["table_9_rule_comparison_random_instances"] = pd.DataFrame(
+        comparison.random_per_instance)
+    # Alternative Stage-3 smoothness criteria (reviewer request): cross
+    # evaluation on the two multi-period benchmarks and, over the randomized
+    # instances with independent capacities, the share of the attainable
+    # reduction of each criterion that optimizing another criterion delivers.
+    smoothing_rows = [
+        row for model in models if len(model.periods) > 1
+        for row in smoothing_cross_evaluation(model)
+    ]
+    smoothing_random = [
+        row for fam, m in generate_robustness_instances()
+        if fam.capacity_rule == "independent"
+        for row in smoothing_cross_evaluation(m)
+    ]
+    # Service-weight sensitivity (Appendix A.6): Table A4 on the three-period
+    # benchmark, Table A5 on the controlled canal with SYNTHETIC weights.
+    by_name = {model.name: model for model in models}
+    if "temporal_lexicographic" in by_name:
+        tables["table_A4_weight_ratio_sweep"] = pd.DataFrame(
+            weight_ratio_sweep(by_name["temporal_lexicographic"]))
+    if "gone_abat_jap" in by_name:
+        # Table A2 and the reach-capacity statements of Appendix A.4.
+        tables["table_A2_controlled_scenario_periods"] = pd.DataFrame(
+            scenario_period_parameters(by_name["gone_abat_jap"]))
+        tables["table_A2_controlled_scenario_reach_ratios"] = pd.DataFrame(
+            scenario_reach_ratios(by_name["gone_abat_jap"]))
+        tables["table_A5_weighting_rules"] = pd.DataFrame(
+            weighting_rules(by_name["gone_abat_jap"]))
+        tables["table_A5_weighting_rules_by_block"] = pd.DataFrame(
+            weighting_rules_by_block(by_name["gone_abat_jap"]))
+        tables["table_A5_weighting_rules_summary"] = pd.DataFrame(
+            weighting_rules_summary(by_name["gone_abat_jap"]))
+    tables["table_10_smoothness_criteria"] = pd.DataFrame(smoothing_rows)
+    tables["table_10_block_variation_limits"] = pd.DataFrame([
+        row for model in models if len(model.periods) > 1
+        for row in block_variation_limits(model)
+    ])
+    tables["table_10_smoothness_criteria_random_summary"] = pd.DataFrame(
+        smoothing_attainment(smoothing_random))
     for stem, dataframe in tables.items():
         write_table(dataframe, table_dir, stem)
 
@@ -441,6 +521,11 @@ def generate_results(project_root: str | Path) -> dict[str, object]:
         "stage3_floor_preserved": maximum_stage3_floor_violation <= tolerance,
         "stage3_satisfaction_preserved": maximum_stage3_satisfaction_error <= 1e-8,
         "stage3_variation_not_increased": maximum_stage3_variation_excess <= tolerance,
+        "randomized_suite_gates": robustness_summary[-1]["gate_violations"] == 0,
+        "randomized_suite_bottleneck_identified": (
+            robustness_summary[-1]["bottleneck_identified"]
+            == robustness_summary[-1]["with_bottleneck"]
+        ),
     }
     verification_status = "PASS" if all(gates.values()) else "FAIL"
     summary = {
@@ -460,6 +545,21 @@ def generate_results(project_root: str | Path) -> dict[str, object]:
         "temporal_stage3_variation": temporal_solution.stage3.temporal_variation,
         "temporal_leximin_variation": temporal_leximin.temporal_variation,
         "scale_closed_form_max_difference": scale_max_difference,
+        "randomized_suite": {
+            "instances": robustness_summary[-1]["instances"],
+            "gate_violations": robustness_summary[-1]["gate_violations"],
+            "bottleneck_identified": robustness_summary[-1]["bottleneck_identified"],
+            "with_bottleneck": robustness_summary[-1]["with_bottleneck"],
+            "stage3_by_family": {
+                row["family"]: {
+                    "instances": row["instances"],
+                    "stage2_optimum_unique": row["stage2_optimum_unique"],
+                    "stage3_active": row["stage3_active"],
+                    "stage3_inactive_face_not_point": row["stage3_inactive_face_not_point"],
+                }
+                for row in robustness_summary[:-1]
+            },
+        },
         "verification_gates": gates,
         "verification_status": verification_status,
         "manifest": "results/manifests/run_manifest.json",

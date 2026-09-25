@@ -139,8 +139,11 @@ Data/benchmarks/             детерминистик rooted-tree benchmark’
 Data/synthetic_*.json        scale-текширув учун детерминистик instance
 src/                         Python пакети ва desktop GUI
 tests/                       автоматик математик ва дастурий текширувлар
-results/tables/csv/          Git’да сақланадиган ихчам манба жадваллар (table_1..8)
+results/tables/csv/          Git’да сақланадиган ихчам манба жадваллар (table_1..10, A3..A5)
 results/manifests/           муҳит, версия ва SHA-256 provenance маълумотлари
+results/timing/              компьютерга боғлиқ вақт ўлчовлари (bench script'лари)
+results/perturbation/        controlled scenario пертурбация таҳлили (bench script)
+bench/                       қўшимча таҳлилларнинг буйруқ сатри script'лари
 .github/workflows/           GitHub Actions автоматик текшируви
 ```
 
@@ -173,7 +176,7 @@ python -m pytest -p no:cacheprovider
 
 Жорий версияда:
 
-- 24/24 автоматик тест PASS;
+- 76/76 автоматик тест PASS;
 - 6 та детерминистик benchmark: 5 exact синтетик ва 1 controlled scenario;
 - $\max|\lambda^{\mathrm{LP}}-\lambda^{\mathrm{cf}}|\approx1.11\times10^{-16}$;
 - exact operator–balance фарқи $0$;
@@ -187,6 +190,41 @@ python -m pytest -p no:cacheprovider
   $\lambda^{\ast}=0.60$, sparse HiGHS ечими ёпиқ формула билан floating-point
   аниқлигида мос;
 - $\lambda^{\ast}=0.60$ ва Stage-2 қониқиши сонли толеранс доирасида сақланган.
+- тасодифий 400 та инстанциянинг ҳаммасида §2.9 чегаралари бажарилади ва
+  ёпиқ формула кўрсатган тор жой Stage-1 LP нинг ўзи орқали тасдиқланади.
+
+## Қўшимча таҳлиллар
+
+Бу таҳлиллар учинчи тақриз раундига жавобан қўшилган. Детерминистик қисми
+`python run_analysis.py` таркибида; компьютерга боғлиқ ёки узоқ ишлайдиган
+учтаси алоҳида script бўлиб, уларнинг натижасини `run_analysis.py` сақлаб
+қолади ва манифестга ёзади.
+
+| Таҳлил | Буйруқ | Натижа |
+|---|---|---|
+| Тасодифий синов тўплами, тор жойни аниқлаш, Stage-3 фаоллиги | `run_analysis.py` (экранда: `python bench/robustness_suite.py`) | `results/tables/csv/table_A3_robustness_*.csv` |
+| Муқобил тақсимот қоидалари билан солиштириш | `run_analysis.py` | `results/tables/csv/table_9_rule_comparison*.csv` |
+| Stage 3 нинг муқобил силлиқлик мезонлари ва блокларга хос чекловлар | `run_analysis.py` | `results/tables/csv/table_10_*.csv` |
+| Вазнлар таҳлили: бешта қоида, ютган ва ютқазган блоклар (синтетик вазнлар) | `run_analysis.py` (экранда: `python bench/weight_sweep.py`) | `results/tables/csv/table_A4_*.csv`, `table_A5_*.csv` |
+| Controlled scenario параметрлари пертурбацияси | `python bench/perturbation.py` | `results/perturbation/` |
+| Ёпиқ формула ва LP вақти, босқичма-босқич | `python bench/scale_timing.py` | `results/timing/scale_timing*.csv`, `environment.json` |
+| Ҳар бир қоиданинг ишлаш вақти | `python bench/compare_rules.py` | `results/timing/rule_comparison_timing.csv` |
+
+Пертурбация таҳлили детерминистик моделни ўзгартирилган маълумотлар билан
+қайта ечади; у натижаларнинг сезгирлик таҳлили, стохастик ёки робаст
+формулировка эмас.
+
+
+## Мақоладаги жадвал ва расмларнинг манба файллари
+
+Файл номлари пакетнинг ўз рақамлашига амал қилади. Мақоладаги жадвал рақами
+билан файл номи мослиги README.md даги "Where each table and figure of the
+manuscript comes from" жадвалида тўлиқ келтирилган (масалан, мақоладаги
+Table 4 → `table_5_invariant_variation_and_price_of_fairness.csv`, Table 8 →
+`table_A3_robustness_suite.csv`, Table 10 →
+`results/perturbation/csv/perturbation_summary.csv`, Table A2 →
+`table_A2_controlled_scenario_periods.csv`, Table A6 →
+`table_10_smoothness_criteria.csv`).
 
 ## Tkinter текшируви
 
@@ -201,9 +239,9 @@ python -m tkinter
 ## Мақола ва қўшимча материал
 
 Очиқ репозиторийда код, математик ҳужжатлар, benchmark маълумотлари, тестлар,
-ихчам натижа жадваллари ва репродуктивлик метамаълумотлари сақланади. `0.5.1`
+ихчам натижа жадваллари ва репродуктивлик метамаълумотлари сақланади. `0.5.2`
 версияси GitHub’даги
-[`v0.5.1` release](https://github.com/Adilbaygh/appliedmath-lexflow_v1_0_0/releases/tag/v0.5.1)
+[`v0.5.2` release](https://github.com/Adilbaygh/appliedmath-lexflow_v1_0_0/releases/tag/v0.5.2)
 билан белгиланади. Мақоланинг ўзбекча ишчи нусхаси, лицензияланган журнал
 шаблони ва ички аудит файллари очиқ GitHub репозиторийсига ҳамда очиқ
 дастурий архивга киритилмайди. Ҳар бир тегланган release Zenodo'да

@@ -11,6 +11,74 @@
   "temporal_stage3_variation": 0.40000000000000113,
   "temporal_leximin_variation": 0.40000000000000013,
   "scale_closed_form_max_difference": 2.220446049250313e-16,
+  "randomized_suite": {
+    "instances": 400,
+    "gate_violations": 0,
+    "bottleneck_identified": 400,
+    "with_bottleneck": 400,
+    "stage3_by_family": {
+      "random_caps": {
+        "instances": 40,
+        "stage2_optimum_unique": 40,
+        "stage3_active": 0,
+        "stage3_inactive_face_not_point": 0
+      },
+      "source_bind": {
+        "instances": 25,
+        "stage2_optimum_unique": 25,
+        "stage3_active": 0,
+        "stage3_inactive_face_not_point": 0
+      },
+      "edge_bind": {
+        "instances": 25,
+        "stage2_optimum_unique": 25,
+        "stage3_active": 0,
+        "stage3_inactive_face_not_point": 0
+      },
+      "missing": {
+        "instances": 30,
+        "stage2_optimum_unique": 30,
+        "stage3_active": 0,
+        "stage3_inactive_face_not_point": 0
+      },
+      "deep": {
+        "instances": 20,
+        "stage2_optimum_unique": 20,
+        "stage3_active": 0,
+        "stage3_inactive_face_not_point": 0
+      },
+      "weights": {
+        "instances": 30,
+        "stage2_optimum_unique": 30,
+        "stage3_active": 0,
+        "stage3_inactive_face_not_point": 0
+      },
+      "degenerate": {
+        "instances": 30,
+        "stage2_optimum_unique": 30,
+        "stage3_active": 0,
+        "stage3_inactive_face_not_point": 0
+      },
+      "independent": {
+        "instances": 80,
+        "stage2_optimum_unique": 24,
+        "stage3_active": 38,
+        "stage3_inactive_face_not_point": 18
+      },
+      "seasonal_supply": {
+        "instances": 60,
+        "stage2_optimum_unique": 21,
+        "stage3_active": 21,
+        "stage3_inactive_face_not_point": 18
+      },
+      "independent_generic": {
+        "instances": 60,
+        "stage2_optimum_unique": 58,
+        "stage3_active": 2,
+        "stage3_inactive_face_not_point": 0
+      }
+    }
+  },
   "verification_gates": {
     "closed_form_lp_agreement": true,
     "scale_closed_form_lp_agreement": true,
@@ -19,7 +87,9 @@
     "stage3_physical_feasibility": true,
     "stage3_floor_preserved": true,
     "stage3_satisfaction_preserved": true,
-    "stage3_variation_not_increased": true
+    "stage3_variation_not_increased": true,
+    "randomized_suite_gates": true,
+    "randomized_suite_bottleneck_identified": true
   },
   "verification_status": "PASS",
   "manifest": "results/manifests/run_manifest.json",

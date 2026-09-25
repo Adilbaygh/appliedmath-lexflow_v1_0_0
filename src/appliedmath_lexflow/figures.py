@@ -34,7 +34,7 @@ from .tables import write_table
 
 SINGLE_COLUMN = (3.5, 2.6)
 DOUBLE_COLUMN = (7.2, 4.3)
-_SOFTWARE_LABEL = "AppliedMath LexFlow 0.5.1"
+_SOFTWARE_LABEL = "AppliedMath LexFlow 0.5.2"
 
 # The colour code itself lives in figure_style.py, which the desktop GUI shares,
 # so an interactively displayed plot matches the published figure exactly.
