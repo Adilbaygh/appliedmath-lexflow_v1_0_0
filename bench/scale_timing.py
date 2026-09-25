@@ -13,7 +13,11 @@ route actually pays for:
 so that closed form = loads + cf_scan and LP = loads + lp_build + lp_solve,
 both with build excluded. Each phase is timed REPEATS times after WARMUP
 warm-up runs; the CSV reports median, interquartile range and minimum.
-Peak working memory is measured separately with tracemalloc (one run each).
+Memory is measured separately with tracemalloc (one run each). What that
+reports is the peak of the Python allocations tracemalloc itself traces: the
+internal C++ allocations of HiGHS, which SciPy calls as compiled code, are
+NOT included, so the figure is a like-for-like comparison of the Python side
+of the two routes and not the working set of the process.
 
 Outputs (from the repository root, ``python bench/scale_timing.py``):
 
@@ -193,6 +197,11 @@ def environment() -> dict[str, object]:
         "scipy": scipy.__version__,
         "solver": "HiGHS via scipy.optimize.linprog(method='highs')",
         "timer": "time.perf_counter, single process, single thread of Python",
+        "memory": ("tracemalloc peak of traced Python allocations; the internal "
+                   "allocations of HiGHS are compiled code and are not traced"),
+        "threads": ("the Python process is single-threaded; the number of threads "
+                    "HiGHS may use is not restricted by this script and no CPU "
+                    "affinity is set"),
         "repeats_per_phase": REPEATS,
         "warmup_runs": WARMUP,
         "statistics": "median, interquartile range (Q1-Q3) and minimum",
@@ -218,6 +227,11 @@ def measure(F):
                        zip(raw["loads"], raw["lp_build"], raw["lp_solve"])]
 
     def peak(fn):
+        """Peak of the Python allocations traced by tracemalloc, in MiB.
+
+        This is not the working set of the process: allocations made inside the
+        HiGHS shared library are not traced.
+        """
         tracemalloc.start()
         fn()
         value = tracemalloc.get_traced_memory()[1] / 2 ** 20
@@ -242,8 +256,8 @@ def measure(F):
         row.update({f"{ph}_median_ms": med, f"{ph}_q1_ms": q1,
                     f"{ph}_q3_ms": q3, f"{ph}_min_ms": mn})
     row["speedup_median_total"] = row["lp_total_median_ms"] / row["cf_total_median_ms"]
-    row["cf_peak_mib"] = peak(run_cf)
-    row["lp_peak_mib"] = peak(run_lp)
+    row["cf_peak_traced_mib"] = peak(run_cf)
+    row["lp_peak_traced_mib"] = peak(run_lp)
     return row, raw
 
 

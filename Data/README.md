@@ -46,9 +46,10 @@ They are used in `tests/test_closed_form.py`, `tests/test_lexicographic.py`,
 A four-node counterexample constructed by the authors to show that
 single-reach lining ascent can be trapped on an ε-plateau while the joint
 two-reach step strictly improves the Stage-1 guarantee (from 1/2 to 1). The
-whole instance is nine numbers and is reproduced in the manuscript, so it can
-be checked by hand. It is a *design* instance: it is not part of the
-allocation benchmark family and is never averaged into any reported result.
+whole instance is nine numbers, so it can be checked by hand. It belongs to
+the rehabilitation-design module of the package and is **not** used anywhere in
+the associated article: it is not part of the allocation benchmark family and
+is never averaged into any reported result.
 
 ## 3. `benchmarks/gone_abat_jap.json`
 
@@ -145,7 +146,7 @@ three-stage procedure does on a network of realistic size, topology and
 efficiency structure — they are not evidence that this particular scarcity
 pattern ever occurred. The evidence that the procedure's behaviour does not
 depend on capacities being tied to loads comes from elsewhere: the instance
-families with independently drawn capacities (Section 4.10, Table 8,
+families whose capacities are not tied to their own loads (Section 4.10, Table 8,
 Appendix A.5) and the perturbation study (Section 4.12).
 
 ## 4. `synthetic_scale_500u_1022e_4p.json`
@@ -174,9 +175,9 @@ regenerates the file byte-for-byte:
 
 Because every reach is slack by construction, **this instance says nothing
 about capacity-limited behaviour** and is never used for that purpose; it is
-a timing and scale benchmark (Section 4.7 and Table 7). The capacity
+a timing and scale benchmark (Section 4.7 and Table 6). The capacity
 structure that is deliberately *not* tied to the loads is the one used by the
-independent-capacity families of Section 4.10.
+untied-capacity families of Section 4.10.
 
 ---
 

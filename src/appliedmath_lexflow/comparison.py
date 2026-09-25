@@ -190,12 +190,18 @@ def compare_model(model: Benchmark) -> list[dict[str, object]]:
     ref_total = sum(
         float(model.demand[k][f]) * reference[(k, f)] for k, f in model.active_records
     )
+    # Reviewer request (round 7): the comparison mixes instances whose service
+    # weights are all equal with instances whose weights differ, while one of
+    # the alternative rules maximizes the *unweighted* total. The grouping is
+    # recorded per instance so that the two groups can be reported apart.
+    equal_weights = len({model.weight_by_user[user] for user in model.user_ids}) == 1
     rows = []
     for key, ratios in allocations.items():
         row: dict[str, object] = {
             "benchmark": model.name,
             "rule": key,
             "rule_label": RULE_LABELS[key],
+            "equal_weights": equal_weights,
             "lambda_star": lambda_star,
         }
         row.update(metrics(model, ratios, reference, lambda_star))
@@ -206,15 +212,45 @@ def compare_model(model: Benchmark) -> list[dict[str, object]]:
     return rows
 
 
-def aggregate(rows: list[dict[str, object]]) -> list[dict[str, object]]:
-    """Per-rule summary over many instances (rows from ``compare_model``)."""
+def _percentile(values: list[float], share: float) -> float:
+    """Linear-interpolation percentile, so that the range is reproducible."""
+    ordered = sorted(values)
+    if len(ordered) == 1:
+        return ordered[0]
+    position = share * (len(ordered) - 1)
+    low = int(position)
+    high = min(low + 1, len(ordered) - 1)
+    return ordered[low] + (position - low) * (ordered[high] - ordered[low])
+
+
+def aggregate(
+    rows: list[dict[str, object]], group: str = "all"
+) -> list[dict[str, object]]:
+    """Per-rule summary over many instances (rows from ``compare_model``).
+
+    ``group`` is "all", "equal_weights" or "unequal_weights"; the last two keep
+    only the instances whose service weights are, or are not, all equal. The
+    medians are reported with the 5-95 % range across instances, because a
+    median alone does not show how stable the difference between the rules is.
+    """
+    if group == "equal_weights":
+        rows = [r for r in rows if r["equal_weights"]]
+    elif group == "unequal_weights":
+        rows = [r for r in rows if not r["equal_weights"]]
+    elif group != "all":
+        raise ValueError(f"unknown group {group!r}")
     out = []
     for key in rules():
         grp = [r for r in rows if r["rule"] == key]
         if not grp:
             continue
         users = [int(r["users"]) for r in grp]
+        base = [x for x in rows if x["rule"] == "three_stage"]
+        delivery = [float(r["total_delivery_relative_to_three_stage"]) for r in grp]
+        variation = [float(r["temporal_variation"]) - float(t["temporal_variation"])
+                     for r, t in zip(grp, base)]
         out.append({
+            "group": group,
             "rule": key,
             "rule_label": RULE_LABELS[key],
             "instances": len(grp),
@@ -232,6 +268,10 @@ def aggregate(rows: list[dict[str, object]]) -> list[dict[str, object]]:
             / sum(users),
             "share_users_worse": sum(int(r["users_worse_than_three_stage"]) for r in grp)
             / sum(users),
+            "delivery_relative_p05": _percentile(delivery, 0.05),
+            "delivery_relative_p95": _percentile(delivery, 0.95),
+            "temporal_variation_difference_p05": _percentile(variation, 0.05),
+            "temporal_variation_difference_p95": _percentile(variation, 0.95),
         })
     return out
 
@@ -241,9 +281,15 @@ class ComparisonResult:
     per_benchmark: list[dict[str, object]]
     random_per_instance: list[dict[str, object]]
     random_summary: list[dict[str, object]]
+    random_summary_by_weights: list[dict[str, object]]
 
 
 def run_comparison(models: list[Benchmark], random_models: list[Benchmark]) -> ComparisonResult:
     per_benchmark = [row for m in models for row in compare_model(m)]
     random_rows = [row for m in random_models for row in compare_model(m)]
-    return ComparisonResult(per_benchmark, random_rows, aggregate(random_rows))
+    return ComparisonResult(
+        per_benchmark,
+        random_rows,
+        aggregate(random_rows),
+        aggregate(random_rows, "equal_weights") + aggregate(random_rows, "unequal_weights"),
+    )

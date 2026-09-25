@@ -1,5 +1,26 @@
 # Model development log
 
+## v0.5.6
+
+Reported metrics are renamed to what the code actually measures, and the
+release metadata is aligned with the associated article.
+
+* `bench/scale_timing.py` no longer calls its memory figure "peak working
+  memory". `tracemalloc` reports the peak of the Python allocations it traces;
+  the internal allocations of HiGHS are compiled code and are not traced. The
+  two CSV columns are renamed `cf_peak_traced_mib` and `lp_peak_traced_mib`,
+  and `results/timing/environment.json` now records both that limitation and
+  the fact that the script sets no CPU affinity and does not restrict the
+  number of threads HiGHS may use.
+* Figure 9 is redrawn with larger tick, axis and legend type.
+* `CITATION.cff` and `.zenodo.json` describe the allocation model of the
+  article and say that the rehabilitation-design module is not part of it.
+* `Data/README.md` no longer states that `design/greedy_lining_trap.json` is
+  reproduced in the article, points the scaling benchmark at Table 6 rather
+  than Table 7, and uses the article's term "untied capacities".
+
+No model, benchmark or result value changes.
+
 ## v0.5.5
 
 One terminology change, so that the article and the package name the same thing

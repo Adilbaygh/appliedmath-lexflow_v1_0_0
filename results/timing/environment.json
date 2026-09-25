@@ -7,6 +7,8 @@
   "scipy": "1.17.0",
   "solver": "HiGHS via scipy.optimize.linprog(method='highs')",
   "timer": "time.perf_counter, single process, single thread of Python",
+  "memory": "tracemalloc peak of traced Python allocations; the internal allocations of HiGHS are compiled code and are not traced",
+  "threads": "the Python process is single-threaded; the number of threads HiGHS may use is not restricted by this script and no CPU affinity is set",
   "repeats_per_phase": 30,
   "warmup_runs": 3,
   "statistics": "median, interquartile range (Q1-Q3) and minimum",

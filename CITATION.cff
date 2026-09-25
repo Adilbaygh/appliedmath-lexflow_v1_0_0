@@ -2,13 +2,19 @@ cff-version: 1.2.0
 message: "Please cite the associated AppliedMath article and this software release."
 title: "AppliedMath LexFlow: Deterministic Lexicographic Flow Allocation on Lossy Capacitated Trees"
 abstract: >-
-  Exact, reproducible software for deterministic lexicographic flow allocation on
-  lossy, capacitated rooted trees, and for the inverse rehabilitation-design
-  problem posed on the same model: the closed-form minimum-cost widening plan and
-  its budget function, the epsilon-bottleneck-set ascent for lining, exact-rational
-  relief sets and minimum-cost transversals, six benchmark instances including a
-  36-node, 16-period controlled canal scenario, and the scripts that regenerate the
-  published tables and figures. The loss operator, the closed-form Stage-1 value and the acceptance gates are evaluated in exact rational arithmetic; the Stage-2 and Stage-3 linear programs are solved in double precision.
+  Exact, reproducible software for deterministic three-stage lexicographic flow
+  allocation on lossy, capacitated rooted trees: the closed-form Stage-1 maximin
+  guarantee and its bottleneck diagnosis, the loss-aware path operator and its
+  equivalence with node-edge balance, the Stage-2 weighted-satisfaction and
+  Stage-3 temporal-smoothness programs, five exact rational benchmarks and a
+  36-node, 16-period controlled canal scenario, the randomized verification
+  suite, the comparison with alternative allocation rules, the perturbation,
+  weighting and smoothness-criterion analyses, and the scripts that regenerate
+  every published table and figure. The loss operator, the closed-form Stage-1
+  value and the acceptance gates are evaluated in exact rational arithmetic; the
+  Stage-2 and Stage-3 linear programs are solved in double precision. The
+  package also contains a rehabilitation-design module (minimum-cost widening
+  and lining) that is not part of the associated article.
 type: software
 authors:
   - family-names: Kudaybergenov
@@ -21,7 +27,7 @@ authors:
     given-names: Gulsara
   - family-names: Ispanova
     given-names: Jadira
-version: 0.5.5
+version: 0.5.6
 date-released: 2026-09-25
 license: MIT
 repository-code: "https://github.com/Adilbaygh/appliedmath-lexflow_v1_0_0"
@@ -32,6 +38,6 @@ keywords:
   - network flow
   - reproducible research
   - irrigation canal networks
-  - capacity expansion
+  - conveyance losses
   - max-min fairness
-  - rehabilitation planning
+  - linear programming

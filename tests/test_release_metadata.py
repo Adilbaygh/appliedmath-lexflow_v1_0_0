@@ -40,6 +40,13 @@ def test_release_metadata_is_consistent() -> None:
         encoding="utf-8"
     )
 
+    # .zenodo.json is what the archive is built from. It stopped being valid
+    # JSON in v0.5.5, when a quoted family label was written into the HTML
+    # description without escaping, and nothing noticed because nothing parsed
+    # it. Parse it here, and require the version to agree with the package.
+    zenodo = json.loads((ROOT / ".zenodo.json").read_text(encoding="utf-8"))
+    assert zenodo["version"] == version
+
     locked = {}
     for line in (ROOT / "requirements-lock.txt").read_text(encoding="utf-8").splitlines():
         if "==" in line and not line.lstrip().startswith("#"):

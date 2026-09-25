@@ -406,6 +406,12 @@ def generate_results(project_root: str | Path) -> dict[str, object]:
     tables["table_9_rule_comparison"] = pd.DataFrame(comparison.per_benchmark)
     tables["table_9_rule_comparison_random_summary"] = pd.DataFrame(
         comparison.random_summary)
+    # Round-7 reviewer request: the same summary split into the instances whose
+    # service weights are all equal and those whose weights differ, because one
+    # alternative rule maximizes the unweighted total while the hierarchy
+    # maximizes the weighted one; and the 5-95 % range beside every median.
+    tables["table_A7_rule_comparison_by_weights"] = pd.DataFrame(
+        comparison.random_summary_by_weights)
     tables["table_9_rule_comparison_random_instances"] = pd.DataFrame(
         comparison.random_per_instance)
     # Alternative Stage-3 smoothness criteria (reviewer request): cross

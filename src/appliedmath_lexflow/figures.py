@@ -312,37 +312,64 @@ def plot_lexicographic_profiles(
         _save(fig, "figure_5_profiles", output_root)
         return
 
-    fig, axes = plt.subplots(1, 2, figsize=(7.2, 3.4), sharey=True)
+    # Reviewer request (round 7): with twenty blocks in two small panels the
+    # profiles overlap and a twenty-entry legend is unreadable. Only the blocks
+    # that Stage 3 actually moves carry information about the third stage, so
+    # those are drawn in colour and named in the legend, and the rest are drawn
+    # once, thin and grey, as the background they are. Every profile of every
+    # block stays in figure_data/figure_5_profiles.csv of the archived package.
+    MOVED = 1e-9
+    moved = [
+        user for user in users
+        if max(abs(s3 - s2) for _, s2v, s3v in [active[user]]
+               for s2, s3 in zip(s2v, s3v)) > MOVED
+    ]
+    background = [user for user in users if user not in moved]
+    fig, axes = plt.subplots(1, 2, figsize=(7.6, 3.6), sharey=True)
     for ax, (index, title) in zip(axes, ((1, "(a) Stage 2"), (2, "(b) Stage 3"))):
-        for user in users:
+        for user in background:
             numbers, stage2_values, stage3_values = active[user]
-            values = stage2_values if index == 1 else stage3_values
             ax.plot(
-                numbers, values, marker="o", markersize=2.6, linewidth=1.1,
-                color=colors[user], alpha=0.9,
+                numbers, stage2_values if index == 1 else stage3_values,
+                linewidth=0.7, color="0.72", alpha=0.85, zorder=1,
             )
-        ax.axhline(guarantee, linestyle=":", linewidth=1.0, color=GUARANTEE_COLOR)
-        ax.set_title(title, fontsize=8.5)
-        ax.set_xlabel("Planning period")
-        ax.set_xticks(ticks, model.periods, fontsize=6.5)
+        for user in moved:
+            numbers, stage2_values, stage3_values = active[user]
+            ax.plot(
+                numbers, stage2_values if index == 1 else stage3_values,
+                marker="o", markersize=3.2, linewidth=1.4,
+                color=colors[user], alpha=0.95, zorder=3,
+            )
+        ax.axhline(guarantee, linestyle=":", linewidth=1.0, color=GUARANTEE_COLOR,
+                   zorder=2)
+        ax.set_title(title, fontsize=10.0)
+        ax.set_xlabel("Planning period", fontsize=9.5)
+        ax.set_xticks(ticks, model.periods, fontsize=8.0)
+        ax.tick_params(axis="y", labelsize=8.0)
         ax.grid(True, linewidth=0.4, alpha=0.5)
-    axes[0].set_ylabel("Service ratio")
+    axes[0].set_ylabel("Service ratio", fontsize=9.5)
     lowest = min(
         min(min(stage2_values), min(stage3_values))
         for _, stage2_values, stage3_values in active.values()
     )
     axes[0].set_ylim(max(0.0, min(lowest, guarantee) - 0.03), 1.02)
     handles = [
-        Line2D([], [], color=colors[user], linewidth=2.0, label=_math_label(user))
-        for user in users
+        Line2D([], [], color=colors[user], marker="o", markersize=3.2,
+               linewidth=1.4, label=_math_label(user))
+        for user in moved
     ]
+    if background:
+        handles.append(
+            Line2D([], [], color="0.72", linewidth=0.7,
+                   label=f"the other {len(background)} blocks, unchanged by Stage 3")
+        )
     handles.append(
         Line2D([], [], color=GUARANTEE_COLOR, linestyle=":", linewidth=1.0,
                label=rf"guarantee $\lambda^*={guarantee:g}$")
     )
     fig.legend(
-        handles=handles, loc="lower center", ncol=min(8, len(handles)),
-        frameon=False, fontsize=6.5, bbox_to_anchor=(0.5, -0.16),
+        handles=handles, loc="lower center", ncol=min(5, len(handles)),
+        frameon=False, fontsize=9.0, bbox_to_anchor=(0.5, -0.06),
     )
     _save(fig, "figure_5_profiles", output_root)
 

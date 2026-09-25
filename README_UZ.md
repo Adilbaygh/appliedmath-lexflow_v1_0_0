@@ -241,7 +241,7 @@ python -m tkinter
 Очиқ репозиторийда код, математик ҳужжатлар, benchmark маълумотлари, тестлар,
 ихчам натижа жадваллари ва репродуктивлик метамаълумотлари сақланади. `0.5.2`
 версияси GitHub’даги
-[`v0.5.5` release](https://github.com/Adilbaygh/appliedmath-lexflow_v1_0_0/releases/tag/v0.5.5)
+[`v0.5.6` release](https://github.com/Adilbaygh/appliedmath-lexflow_v1_0_0/releases/tag/v0.5.6)
 билан белгиланади. Мақоланинг ўзбекча ишчи нусхаси, лицензияланган журнал
 шаблони ва ички аудит файллари очиқ GitHub репозиторийсига ҳамда очиқ
 дастурий архивга киритилмайди. Ҳар бир тегланган release Zenodo'да
