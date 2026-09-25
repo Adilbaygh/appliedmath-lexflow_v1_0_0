@@ -1,5 +1,30 @@
 # Model development log
 
+## v0.5.4
+
+Documentation corrections found by the fifth review round. No model, benchmark
+or result value changes.
+
+- `Data/README.md` listed the per-period head-gate inflow `source_capacity`
+  among the parameters taken unchanged from the published dataset, while the
+  manuscript states that the source allocations are imposed by the authors.
+  The manuscript is right: every stored value equals the rounded product of the
+  prescribed ratio, 1.05 in periods 11-17, 0.85 in periods 18-24 and 0.90 in
+  periods 25-26, with the full-demand gross load at the head gate. The field is
+  now documented as imposed;
+- `Data/design/build_gone_abat_jap_capacities.py` derives the 16 source
+  allocations as well as the 560 reach capacities and checks both against the
+  stored file, and `tests/test_data_provenance.py` gained two tests, one for the
+  derivation and one that keeps the README statement aligned with it;
+- the same script described its nominal design volumes as a "20-day period" and
+  explained the 11/10 factor of periods 15, 20 and 25 by low demand. The periods
+  are ten days long and those three are eleven days long. The volumes are the
+  design discharges of 7, 3 and 2 cubic metres per second times the length of
+  the period; the docstring now says so;
+- `CITATION.cff` claimed exact rational arithmetic for the whole package. The
+  loss operator, the closed-form Stage-1 value and the acceptance gates are
+  exact; the Stage-2 and Stage-3 linear programs are solved in double precision.
+
 ## v0.5.3
 
 Changes made for the third and fourth review rounds. The formulation, Theorems 1

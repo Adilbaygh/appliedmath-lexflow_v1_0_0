@@ -8,7 +8,7 @@ abstract: >-
   its budget function, the epsilon-bottleneck-set ascent for lining, exact-rational
   relief sets and minimum-cost transversals, six benchmark instances including a
   36-node, 16-period controlled canal scenario, and the scripts that regenerate the
-  published tables and figures. All arithmetic is exact rational.
+  published tables and figures. The loss operator, the closed-form Stage-1 value and the acceptance gates are evaluated in exact rational arithmetic; the Stage-2 and Stage-3 linear programs are solved in double precision.
 type: software
 authors:
   - family-names: Kudaybergenov
@@ -21,7 +21,7 @@ authors:
     given-names: Gulsara
   - family-names: Ispanova
     given-names: Jadira
-version: 0.5.3
+version: 0.5.4
 date-released: 2026-09-25
 license: MIT
 repository-code: "https://github.com/Adilbaygh/appliedmath-lexflow_v1_0_0"

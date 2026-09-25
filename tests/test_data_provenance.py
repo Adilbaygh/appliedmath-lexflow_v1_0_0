@@ -7,9 +7,9 @@ scripts in ``Data/design/`` and require them to reproduce the committed
 instance files exactly.
 
 * ``Data/design/build_gone_abat_jap_capacities.py`` re-derives all 560
-  conveyance capacities of the Gone Abat Jap instance from the rule of
-  Appendix A.4, using only the published topology, efficiencies and demands
-  (Mendeley Data, doi:10.17632/xt3gsf89n9.1).
+  conveyance capacities and all 16 source allocations of the Gone Abat Jap
+  instance from the rules of Appendix A.4, using only the published topology,
+  efficiencies and demands (Mendeley Data, doi:10.17632/xt3gsf89n9.1).
 * ``Data/design/build_synthetic_scale.py`` regenerates the whole synthetic
   scale instance from its closed construction rule, with no random number
   generator anywhere.
@@ -57,6 +57,28 @@ def test_gone_abat_jap_capacities_follow_the_stated_rule(gone_abat_jap_builder):
     derived = module.derive_capacities(data)
     diffs = module.compare(data, derived)
     assert diffs == [], f"{len(diffs)} capacity value(s) deviate from the A.4 rule: {diffs[:5]}"
+
+
+def test_gone_abat_jap_source_allocations_follow_the_stated_rule(
+        gone_abat_jap_builder):
+    """All 16 source allocations follow the Appendix A.4 rule exactly.
+
+    They are imposed by the authors, not published, which is what makes the
+    scenario a controlled scarcity scenario; Data/README.md says so.
+    """
+    module = gone_abat_jap_builder
+    data = json.loads(GONE_ABAT_JAP.read_text(encoding="utf-8"))
+    derived = module.derive_source_capacity(data)
+    diffs = module.compare_source(data, derived)
+    assert diffs == [], f"{len(diffs)} source allocation(s) deviate: {diffs[:5]}"
+
+
+def test_data_readme_calls_the_source_allocations_imposed():
+    """The provenance statement of Data/README.md matches the derivation."""
+    readme = (REPO_ROOT / "Data" / "README.md").read_text(encoding="utf-8")
+    published, imposed = readme.split("### 3.2 Imposed parameters", maxsplit=1)
+    assert "source_capacity" not in published.split("### 3.1", maxsplit=1)[1]
+    assert "source_capacity" in imposed
 
 
 def test_gone_abat_jap_scarcity_structure(gone_abat_jap_builder):

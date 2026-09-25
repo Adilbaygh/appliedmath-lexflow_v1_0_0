@@ -66,22 +66,38 @@ Data, **doi:10.17632/xt3gsf89n9.1** (reference [39] of the manuscript):
 * the 20 water users `F1`…`F20` and the terminals they are attached to;
 * the 16 ten-day periods `11`…`26` of the irrigation season;
 * the per-period water requirement of each user (`demand`);
-* the per-period head-gate inflow (`source_capacity`);
 * the conveyance efficiency of each reach (`efficiency`).
 
 ### 3.2 Imposed parameters — set by the authors
 
-The published dataset contains **no measured reach-by-reach conveyance
-capacity record**. The `edge_capacity` field — all 35 × 16 = 560 values — is
-therefore imposed by the authors, by the rule stated in Appendix A.4 of the
-manuscript and implemented in
-[`design/build_gone_abat_jap_capacities.py`](design/build_gone_abat_jap_capacities.py):
+Two fields are imposed by the authors, because the published dataset
+contains **no measured reach-by-reach conveyance capacity record** and the
+scarcity of the scenario is constructed rather than observed: the
+`source_capacity` field (16 values) and the `edge_capacity` field (all
+35 × 16 = 560 values). Both follow the rules stated in Appendix A.4 of the
+manuscript, and both are re-derived and checked against the stored file by
+[`design/build_gone_abat_jap_capacities.py`](design/build_gone_abat_jap_capacities.py).
+
+**Source allocations.** The allocation of period `k` is a prescribed multiple
+of the full-demand gross load at the head gate,
+
+```
+Q(k) = xi(k) · L_src(k)
+```
+
+with `xi = 1.05` in the pre-peak periods 11–17, `0.85` in the peak periods
+18–24 and `0.90` in the tail periods 25–26. `L_src(k)` is computed from the
+published demands and efficiencies alone. The peak value is what makes the
+source the binding resource and fixes `lambda* = 0.85`.
+
+**Reach capacities.**
 
 1. **Design capacities (30 reaches).** The structural reaches keep the design
-   discharge of the physical canal, converted to a volume per period:
-   6 048 000 m³ for the main-canal reaches, 2 592 000 m³ for `K3`, and
-   1 728 000 m³ for the distributor reaches. These are far above any load and
-   never bind.
+   discharge of the physical canal, converted to a volume per period by
+   multiplying it by the length of the period. The discharges are 7 m³/s on
+   the main-canal reaches, 3 m³/s on `K3` and 2 m³/s on the distributor
+   reaches; over a ten-day period these give 6 048 000 m³, 2 592 000 m³ and
+   1 728 000 m³ respectively. They are far above any load and never bind.
 2. **Five instrumented reaches.** No design figure is available for `K5`,
    `K6`, `K8`, `K11` and `K12`, so one constant per reach is imposed:
 
@@ -94,8 +110,8 @@ manuscript and implemented in
    computed from the published demands and efficiencies alone. The factor
    21/20 makes the smallest capacity-to-load ratio outside the scarcity pairs
    of step 4 equal to exactly **1.05**.
-3. **Relaxed periods.** In periods 15, 20 and 25 every capacity of steps 1
-   and 2 is multiplied by 11/10.
+3. **Eleven-day periods.** Periods 15, 20 and 25 are eleven days long rather
+   than ten, so every capacity of steps 1 and 2 is multiplied by 11/10 there.
 4. **Scarcity pairs.** In nine designated (reach, period) pairs the capacity
    is overridden by `c(e, k) = 9/10 · L(e, k)`, so the reach can carry only
    90 % of its load. These nine pairs are what makes the instance a scarcity
