@@ -92,9 +92,20 @@ def solve_three_stage(
     model: Benchmark,
     feasibility_tolerance: float = 1e-9,
     preservation_tolerance: float = 1e-8,
+    verify_stage1_lp: bool = True,
 ) -> ThreeStageSolution:
     closed_form = solve_stage1_closed_form(model)
-    stage1_lp = solve_stage1_lp(model, feasibility_tolerance=feasibility_tolerance)
+    # The Stage-1 LP is a verification of the closed form, not a step of the
+    # algorithm. bench/compare_rules.py times the rule with and without it so
+    # that the comparison with the other rules is like for like.
+    if verify_stage1_lp:
+        stage1_lp = solve_stage1_lp(model, feasibility_tolerance=feasibility_tolerance)
+        stage1_status, stage1_message = stage1_lp.status, stage1_lp.message
+        stage1_lp_value = stage1_lp.lambda_star
+    else:
+        stage1_status = 0
+        stage1_message = "Stage-1 LP verification skipped"
+        stage1_lp_value = float(closed_form.lambda_star)
     lambda_star = float(closed_form.lambda_star)
     records = model.active_records
     record_index = {record: idx for idx, record in enumerate(records)}
@@ -107,8 +118,8 @@ def solve_three_stage(
         model,
         canonical_ratios,
         lambda_star,
-        stage1_lp.status,
-        stage1_lp.message,
+        stage1_status,
+        stage1_message,
     )
 
     result2 = linprog(
@@ -197,7 +208,7 @@ def solve_three_stage(
         str(result3.message),
     )
 
-    if abs(stage1_lp.lambda_star - lambda_star) > 5e-7:
+    if abs(stage1_lp_value - lambda_star) > 5e-7:
         raise AssertionError("Closed-form and LP Stage-1 values disagree.")
     if stage3.minimum_ratio + 5e-7 < lambda_star:
         raise AssertionError("Stage 3 violates the Stage-1 floor.")
@@ -212,4 +223,5 @@ def solve_three_stage(
     if stage3.temporal_variation > stage2.temporal_variation + 5e-7:
         raise AssertionError("Stage 3 increases temporal variation.")
 
-    return ThreeStageSolution(closed_form.lambda_star, stage1_lp.lambda_star, stage1, stage2, stage3)
+    return ThreeStageSolution(
+        closed_form.lambda_star, stage1_lp_value, stage1, stage2, stage3)

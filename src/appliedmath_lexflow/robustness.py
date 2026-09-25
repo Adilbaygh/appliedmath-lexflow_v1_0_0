@@ -435,12 +435,16 @@ def _scaled(model: Benchmark, factor_by_label: dict[str, Fraction]) -> Benchmark
     return _with_capacities(model, source_capacity, edge_capacity)
 
 
-def lp_bottleneck_test(model: Benchmark, closed) -> tuple[bool, bool, float, float]:
+def lp_bottleneck_test(
+    model: Benchmark, closed, lp_lambda_star: float | None = None,
+) -> tuple[bool, bool, float, float]:
     """Identify the bottleneck with the Stage-1 LP alone.
 
     The near-minimizer set N collects the resources whose ratio lies within
-    NEAR_MINIMIZER_MARGIN of lambda*. Two LP solves test it without using the
-    closed form's value:
+    NEAR_MINIMIZER_MARGIN of a reference guarantee. That reference is the
+    Stage-1 LP value whenever one is supplied, so the closed form contributes
+    the prediction under test and never the value it is compared with. Two LP
+    solves then test the set:
 
     * sufficiency -- relaxing every resource outside N tenfold leaves the LP
       guarantee unchanged, so N alone limits the guarantee;
@@ -451,16 +455,17 @@ def lp_bottleneck_test(model: Benchmark, closed) -> tuple[bool, bool, float, flo
     lp_after_relaxing_named). For lambda* = 1 no resource binds and both tests
     are reported as passed.
     """
-    lam = closed.lambda_star
-    if lam >= 1:
+    reference = float(closed.lambda_star if lp_lambda_star is None else lp_lambda_star)
+    if reference >= 1 - 1e-9:
         return True, True, 1.0, 1.0
     ratios = _resource_ratios(model, closed)
-    near = {lab for lab, xi in ratios.items() if xi <= lam * (1 + NEAR_MINIMIZER_MARGIN)}
+    margin = reference * (1 + float(NEAR_MINIMIZER_MARGIN))
+    near = {lab for lab, xi in ratios.items() if float(xi) <= margin}
     others = {lab: RELAX_OTHERS for lab in ratios if lab not in near}
     lp_others = solve_stage1_lp(_scaled(model, others)).lambda_star
     lp_named = solve_stage1_lp(_scaled(model, {lab: RELAX_NAMED for lab in near})).lambda_star
-    sufficient = abs(lp_others - float(lam)) <= 1e-9
-    necessary = lp_named - float(lam) > 1e-9
+    sufficient = abs(lp_others - reference) <= 1e-9
+    necessary = lp_named - reference > 1e-9
     return sufficient, necessary, lp_others, lp_named
 
 
@@ -516,7 +521,8 @@ def check(model: Benchmark) -> dict[str, object]:
     slack_lp = _max_relative_slack(model, resources, lp.ratios, a_coeff, b_coeff)
     slack_s3 = _max_relative_slack(model, resources, stage3.ratios, a_coeff, b_coeff)
 
-    sufficient, necessary, lp_others, lp_named = lp_bottleneck_test(model, closed)
+    sufficient, necessary, lp_others, lp_named = lp_bottleneck_test(
+        model, closed, lp.lambda_star)
     face_width = stage2_face_width(model, lambda_star, stage2.ratios)
     face_is_point = face_width <= FACE_WIDTH_THRESHOLD
 

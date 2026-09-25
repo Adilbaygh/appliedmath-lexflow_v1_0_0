@@ -21,6 +21,20 @@ Scenarios (DRAWS instances each):
 For every draw the lambda*, the set of resources attaining (25) to within a
 relative 1e-6, the margin to the runner-up resource, S* and Omega* are
 recorded; the summary reports how often each of them changes.
+
+Three residuals of the accepted Stage-3 solution are recorded with every
+draw, so that the exactness of the preserved optima can be separated from
+their realization in floating-point arithmetic:
+
+``residual_satisfaction``    |S(r3) - S*|, the departure from the Stage-2
+                             optimum that the preservation row enforces;
+``residual_floor``           max(0, lambda* - min r3), the departure below
+                             the Stage-1 guarantee;
+``residual_physical``        the largest relative excess of a source or
+                             reach load over its capacity.
+
+The summary reports the maximum of each over all draws of a scenario and
+over the draws that needed a relaxed feasibility tolerance.
 """
 
 from __future__ import annotations
@@ -31,7 +45,10 @@ from fractions import Fraction
 
 from .domain import Benchmark
 from .lexicographic import solve_three_stage
-from .robustness import _resource_ratios, _with_capacities
+from .operators import build_operator_exact
+from .robustness import (
+    _relative_physical_violation, _resource_ratios, _with_capacities,
+)
 from .stage1 import solve_stage1_closed_form
 
 SEED = 20260922
@@ -120,6 +137,7 @@ def diagnose(model: Benchmark) -> dict[str, object]:
     runner_up = next((xi for lab, xi in ordered if lab not in near), None)
     margin = float((runner_up - lam) / lam) if (runner_up is not None and lam > 0) else None
     classes = sorted({lab.split(":")[0] for lab in near})
+    a_coeff, b_coeff = build_operator_exact(model)
     return {
         "lambda_star": float(lam),
         "bottleneck_argmin": closed.active_resources[0] if closed.active_resources else "",
@@ -130,6 +148,13 @@ def diagnose(model: Benchmark) -> dict[str, object]:
         "stage2_satisfaction": solution.stage2.weighted_satisfaction,
         "stage3_variation": solution.stage3.temporal_variation,
         "feasibility_tolerance": tolerance_used,
+        "residual_satisfaction": abs(
+            solution.stage3.weighted_satisfaction
+            - solution.stage2.weighted_satisfaction),
+        "residual_floor": max(
+            0.0, float(lam) - solution.stage3.minimum_ratio),
+        "residual_physical": _relative_physical_violation(
+            model, solution.stage3.ratios, a_coeff, b_coeff),
     }
 
 
@@ -152,6 +177,7 @@ def summarize(base: dict[str, object], rows: list[dict[str, object]]):
         lam = [float(r["lambda_star"]) for r in grp]
         s2 = [float(r["stage2_satisfaction"]) for r in grp]
         om = [float(r["stage3_variation"]) for r in grp]
+        relaxed = [r for r in grp if float(r["feasibility_tolerance"]) > 1e-9]
 
         def q(values, p):
             return statistics.quantiles(values, n=20, method="inclusive")[p]
@@ -186,5 +212,16 @@ def summarize(base: dict[str, object], rows: list[dict[str, object]]):
             "largest_tolerance_used": max(float(r["feasibility_tolerance"]) for r in grp),
             "stage3_variation_changed": sum(
                 1 for v in om if abs(v - float(base["stage3_variation"])) > CHANGE_TOLERANCE),
+            "max_residual_satisfaction": max(
+                float(r["residual_satisfaction"]) for r in grp),
+            "max_residual_floor": max(float(r["residual_floor"]) for r in grp),
+            "max_residual_physical": max(
+                float(r["residual_physical"]) for r in grp),
+            "max_residual_satisfaction_relaxed": max(
+                [float(r["residual_satisfaction"]) for r in relaxed] or [0.0]),
+            "max_residual_floor_relaxed": max(
+                [float(r["residual_floor"]) for r in relaxed] or [0.0]),
+            "max_residual_physical_relaxed": max(
+                [float(r["residual_physical"]) for r in relaxed] or [0.0]),
         })
     return out
