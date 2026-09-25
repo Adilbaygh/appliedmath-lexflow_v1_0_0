@@ -80,7 +80,11 @@ generated result files.
 
 ```text
 Model/                       mathematical specification, theorems, and proofs
+Data/README.md               provenance of every instance: which parameters are
+                             published, which are imposed, and by which rule
 Data/benchmarks/             deterministic rooted-tree benchmark instances
+Data/design/                 counterexample instance and the scripts that re-derive
+                             every author-imposed parameter
 Data/synthetic_*.json        deterministic scale-verification instance
 src/                         Python package and desktop application
 tests/                        automated mathematical and implementation checks

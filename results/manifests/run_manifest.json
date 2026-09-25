@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-09-21T12:50:06.346432+00:00",
+  "generated_at_utc": "2026-09-25T02:53:34.989879+00:00",
   "project": "AppliedMath deterministic lexicographic tree-flow article",
   "model_boundary": "deterministic rooted trees; no scenario-indexed, stochastic, or robust optimization",
   "command": "python run_analysis.py",
