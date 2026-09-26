@@ -59,16 +59,17 @@ def main() -> int:
                   'bottleneck_tight', 'bottleneck_sufficient',
                   'bottleneck_necessary', 'bottleneck_identified')))
     print()
-    print("Stage 3: unique = Stage-2 optimum is a single point (Stage 3 redundant);")
+    print("Stage 3: not det. = the one-sided face probe did not detect")
+    print("  multiplicity of the Stage-2 optimum (Stage 3 redundant);")
     print("  active = Stage 3 lowered Omega; vertex = face is not a point but the")
     print("  solver's Stage-2 vertex was already the smoothest.")
-    print(f"{'family':58} {'unique':>8} {'active':>8} {'vertex':>8} {'median red.':>12}")
+    print(f"{'family':58} {'not det.':>8} {'active':>8} {'vertex':>8} {'median red.':>12}")
     for s in table:
         n = s['instances']
         print(f"{s['family_label']:58} "
-              f"{str(s['stage2_optimum_unique']) + '/' + str(n):>8} "
+              f"{str(s['stage2_multiplicity_not_detected']) + '/' + str(n):>8} "
               f"{str(s['stage3_active']) + '/' + str(n):>8} "
-              f"{str(s['stage3_inactive_face_not_point']) + '/' + str(n):>8} "
+              f"{str(s['stage3_inactive_multiplicity_detected']) + '/' + str(n):>8} "
               f"{s['median_relative_reduction_when_active']:12.3f}")
     total = table[-1]
     print()

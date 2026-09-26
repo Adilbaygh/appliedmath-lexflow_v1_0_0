@@ -43,6 +43,7 @@ from .weights import (
 )
 from .smoothing import attainment_summary as smoothing_attainment
 from .smoothing import cross_evaluation as smoothing_cross_evaluation
+from .robustness import FAMILIES_LOAD_INDEPENDENT
 from .robustness import generate_instances as generate_robustness_instances
 from .robustness import run_suite as run_robustness_suite
 from .robustness import summarize as summarize_robustness_suite
@@ -390,6 +391,12 @@ def generate_results(project_root: str | Path) -> dict[str, object]:
     robustness_summary = summarize_robustness_suite(robustness_rows)
     tables["table_A3_robustness_suite"] = pd.DataFrame(robustness_summary)
     tables["table_A3_robustness_instances"] = pd.DataFrame(robustness_rows)
+    # Load-independent volume scales (journal comment 2): reported separately so
+    # that the 400 instances above, and every number of Table 8, are unchanged.
+    load_independent_rows = run_robustness_suite(FAMILIES_LOAD_INDEPENDENT)
+    load_independent_summary = summarize_robustness_suite(load_independent_rows)
+    tables["table_A8_load_independent_suite"] = pd.DataFrame(load_independent_summary)
+    tables["table_A8_load_independent_instances"] = pd.DataFrame(load_independent_rows)
     # Comparison with alternative allocation rules (reviewer request): the six
     # benchmarks individually, and the 200 randomized instances of the second
     # seed group, that is, every family whose capacities are not prescribed
@@ -563,9 +570,10 @@ def generate_results(project_root: str | Path) -> dict[str, object]:
             "stage3_by_family": {
                 row["family"]: {
                     "instances": row["instances"],
-                    "stage2_optimum_unique": row["stage2_optimum_unique"],
+                    "stage2_multiplicity_not_detected": row["stage2_multiplicity_not_detected"],
                     "stage3_active": row["stage3_active"],
-                    "stage3_inactive_face_not_point": row["stage3_inactive_face_not_point"],
+                    "stage3_inactive_multiplicity_detected":
+                        row["stage3_inactive_multiplicity_detected"],
                 }
                 for row in robustness_summary[:-1]
             },

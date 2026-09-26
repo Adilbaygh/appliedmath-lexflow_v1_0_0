@@ -199,9 +199,9 @@ The public repository contains the code, model documentation, benchmark data,
 tests, compact source tables, and reproducibility metadata. Every number reported in the
 article is produced by one tagged state of this repository; cite that tag,
 or the commit it points to, together with the version DOI of its archive.
-Version `0.5.6` is
+Version `0.5.7` is
 identified by the tagged GitHub release
-[`v0.5.6`](https://github.com/Adilbaygh/appliedmath-lexflow_v1_0_0/releases/tag/v0.5.6).
+[`v0.5.7`](https://github.com/Adilbaygh/appliedmath-lexflow_v1_0_0/releases/tag/v0.5.7).
 The private Uzbek manuscript, licensed journal template and local review files
 remain outside this public repository and outside the curated public software
 archive. Each tagged release is archived on Zenodo under the concept DOI

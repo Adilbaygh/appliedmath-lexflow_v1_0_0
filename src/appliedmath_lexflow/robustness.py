@@ -32,9 +32,21 @@ a minimizer of (25) must be tight at the Stage-1 LP optimum and at the Stage-3
 optimum (Theorem 1 requires this of every Stage-1 optimal allocation), and the
 Stage-1 LP alone must confirm it -- relaxing all other resources tenfold leaves
 the LP guarantee unchanged, relaxing the named resources by 0.1% raises it.
-It also records whether the Stage-2 optimum is a single point, which is the
-structural condition under which Stage 3 is redundant, and how often Stage 3
-lowers the temporal variation.
+It also probes the Stage-2 optimal face with one random linear functional and
+records whether multiplicity of the Stage-2 optimum was detected, which is the
+structural condition under which Stage 3 can act at all, and how often Stage 3
+lowers the temporal variation.  The probe is one-sided: a nonzero spread
+certifies multiplicity, a spread within solver precision does not certify
+uniqueness, so the outcome is reported as "multiplicity not detected".
+
+3. *Capacities whose volume scale does not depend on the realized loads.* In
+   the three families above a capacity is the lower median of the realized
+   full-demand loads times an independent coefficient, so its conditional mean
+   still depends on the demands and efficiencies that were drawn.  The family
+   of :data:`FAMILIES_LOAD_INDEPENDENT` (60 instances, seed 20260926) instead
+   fixes both volume scales before any draw, from the declared family
+   parameters alone.  It is generated, run and reported separately, so the 400
+   instances above are unchanged.
 
 The acceptance thresholds are those of Section 2.9, unchanged; the relative
 physical residual G5r (violation divided by the capacity of the same resource)
@@ -74,6 +86,7 @@ from .verification import maximum_physical_violation, verify_operator_exact
 
 SEED_PRESCRIBED = 20260916
 SEED_INDEPENDENT = 20260921
+SEED_LOAD_INDEPENDENT = 20260926
 
 #: A resource named by the closed form is counted as tight when its relative
 #: slack (C - B(r)) / C at the LP optimum does not exceed this value.
@@ -212,6 +225,14 @@ def _uniform(rng: random.Random, low: Fraction, high: Fraction) -> Fraction:
 
 
 def _median(values) -> Fraction:
+    """The LOWER median of the positive values, an element of the sample.
+
+    ``statistics.median_low`` returns one of the values rather than the
+    average of the two middle ones, so the scale stays an exact rational
+    taken from the loads themselves even when their number is even: for a
+    sorted nonempty sample z_(1) <= ... <= z_(m) it is z_(ceil(m/2)).  Each
+    resource class is scaled by the lower median of its own loads.
+    """
     positive = sorted(v for v in values if v > 0)
     return statistics.median_low(positive) if positive else Fraction(1)
 
@@ -219,8 +240,10 @@ def _median(values) -> Fraction:
 def independent_instance(rng, *, name, eta_choices, weight_choices) -> Benchmark:
     """Source and reach capacities drawn independently of the loads.
 
-    Q_k = median(L^src) * U(0.3, 1.3) for each period separately and
-    C_ke = median(L_edge) * U(0.2, 2.5) for each reach and period separately,
+    Q_k = lower_median(L^src) * U(0.3, 1.3) for each period separately and
+    C_ke = lower_median(L_edge) * U(0.2, 2.5) for each reach and period
+    separately, each class scaled by the lower median of its own positive
+    full-demand loads,
     so any source or any reach may bind and the binding resource is not known
     before the closed form is evaluated.
     """
@@ -248,7 +271,7 @@ def independent_instance(rng, *, name, eta_choices, weight_choices) -> Benchmark
 def seasonal_supply_instance(rng, *, name, eta_choices, weight_choices) -> Benchmark:
     """A constant seasonal source allocation against period-varying demand.
 
-    Q_k = median_k(L_k^src) * U(0.6, 1.0), the same value in every period, and
+    Q_k = lower_median_k(L_k^src) * U(0.6, 1.0), the same in every period, and
     reach capacities C_e = max_k L_ke * U(1.2, 2.0), also constant over the
     season. Scarcity therefore varies from period to period, which is the
     situation of a headworks allocation fixed for the season.
@@ -283,15 +306,74 @@ ETA_FINE = tuple(Fraction(x, 1000) for x in range(800, 1000, 7))
 W_UNIT = (Fraction(1),)
 W_WIDE = tuple(Fraction(x) for x in (1, 2, 3, 5, 8, 13, 21, 34))
 
+# --------------------------------------------------------------------------- #
+#  load-independent volume scales
+# --------------------------------------------------------------------------- #
+#: Declared structure of the load-independent family.  These are the only
+#: quantities the two volume scales below are allowed to depend on: they are
+#: fixed before any random draw and are not functions of a realized instance.
+LI_DEPTH = 3
+LI_BRANCHING = 3
+LI_PERIODS = 3
+LI_MISSING_RATE = Fraction(1, 10)
+
+#: Mean of the declared demand range 1..40 of :func:`_draft`.
+LI_DEMAND_MEAN = Fraction(41, 2)
+#: Mean of the declared efficiency alphabet ``ETA_COARSE``.
+LI_ETA_MEAN = sum(ETA_COARSE, Fraction(0)) / len(ETA_COARSE)
+#: Nominal leaf count: the expectation of ``randint(1, B)`` is (B + 1) / 2, and
+#: the tree has ``LI_DEPTH`` levels.
+LI_NOMINAL_LEAVES = (Fraction(LI_BRANCHING + 1, 2)) ** LI_DEPTH
+#: Nominal gross-up of one unit of net demand over a path of ``LI_DEPTH`` reaches.
+LI_NOMINAL_GROSSUP = LI_ETA_MEAN ** (-LI_DEPTH)
+#: Nominal full-demand gross load at the source.
+LI_SOURCE_SCALE = LI_NOMINAL_LEAVES * LI_DEMAND_MEAN * LI_NOMINAL_GROSSUP
+#: Nominal full-demand gross load of a reach leaving the source, which serves
+#: one level fewer leaves than the source itself.
+LI_EDGE_SCALE = LI_SOURCE_SCALE / Fraction(LI_BRANCHING + 1, 2)
+
+
+def load_independent_instance(rng, *, name, eta_choices, weight_choices,
+                              source_scale, edge_scale) -> Benchmark:
+    """Capacities whose volume scale is fixed before the instance is drawn.
+
+    ``Q_k = source_scale * U(0.3, 1.3)`` and
+    ``C_ke = edge_scale * U(0.2, 2.5)``, drawn independently for every period
+    and every reach.  The two scales are constants of the family, derived from
+    its declared parameters only (see ``LI_SOURCE_SCALE``), so no capacity is a
+    function of any realized load, of their median, maximum or minimum.
+    Capacities are never rescaled afterwards to obtain a wanted ``lambda*`` and
+    no instance is discarded, so the binding resource -- source, reach, or the
+    demand upper bound -- is unknown until (25) is evaluated.
+    """
+    draft = _draft(
+        rng, depth=LI_DEPTH, branching=LI_BRANCHING, periods=LI_PERIODS,
+        eta_choices=eta_choices, weight_choices=weight_choices,
+        missing_rate=LI_MISSING_RATE, name=name,
+    )
+    source_capacity = {
+        k: source_scale * _uniform(rng, Fraction(3, 10), Fraction(13, 10))
+        for k in draft.periods
+    }
+    edge_capacity = {
+        k: {e.edge_id: edge_scale * _uniform(rng, Fraction(1, 5), Fraction(5, 2))
+            for e in draft.edges}
+        for k in draft.periods
+    }
+    return _with_capacities(draft, source_capacity, edge_capacity)
 
 @dataclass(frozen=True)
 class Family:
     key: str
     label: str
     count: int
-    capacity_rule: str  # "prescribed", "independent" or "seasonal"
+    capacity_rule: str  # "prescribed", "independent", "seasonal" or
+    #                     "load_independent"
     kwargs: dict = field(default_factory=dict)
     builder: Callable[..., Benchmark] | None = None
+    #: A family with its own seed draws from a stream of its own, so adding
+    #: one cannot shift the draws of any family that uses a shared stream.
+    seed: int | None = None
 
 
 FAMILIES: tuple[Family, ...] = (
@@ -350,17 +432,36 @@ FAMILIES: tuple[Family, ...] = (
 )
 
 
+#: Reported separately from :data:`FAMILIES` so that the 400 instances of
+#: Section 4.10 and Table 8 stay exactly as they are.  Its own seed keeps its
+#: draws independent of both shared streams.
+FAMILIES_LOAD_INDEPENDENT: tuple[Family, ...] = (
+    Family("load_independent",
+           "Load-independent volume scales, lining classes, uniform weights",
+           60, "load_independent",
+           dict(eta_choices=ETA_COARSE, weight_choices=W_UNIT,
+                source_scale=LI_SOURCE_SCALE, edge_scale=LI_EDGE_SCALE),
+           builder=load_independent_instance,
+           seed=SEED_LOAD_INDEPENDENT),
+)
+
 def generate_instances(families: tuple[Family, ...] = FAMILIES):
     """Yield ``(family, model)`` pairs in a fixed, seed-determined order."""
     rng_prescribed = random.Random(SEED_PRESCRIBED)
     rng_independent = random.Random(SEED_INDEPENDENT)
     for fam in families:
+        if fam.seed is not None:
+            rng = random.Random(fam.seed)
+        elif fam.builder is None:
+            rng = rng_prescribed
+        else:
+            rng = rng_independent
         for i in range(fam.count):
             name = f"{fam.key}_{i}"
             if fam.builder is None:
-                yield fam, prescribed_instance(rng_prescribed, name=name, **fam.kwargs)
+                yield fam, prescribed_instance(rng, name=name, **fam.kwargs)
             else:
-                yield fam, fam.builder(rng_independent, name=name, **fam.kwargs)
+                yield fam, fam.builder(rng, name=name, **fam.kwargs)
 
 
 # --------------------------------------------------------------------------- #
@@ -470,10 +571,16 @@ def lp_bottleneck_test(
 
 
 def stage2_face_width(model: Benchmark, lambda_star: float, stage2_ratios) -> float:
-    """Spread of a random linear functional over the Stage-2 optimal face.
+    """Range of ONE reproducibly generated linear functional on the Stage-2 face.
 
-    Zero (to solver precision) means the Stage-2 optimum is a single point, in
-    which case Stage 3 has nothing to choose and is redundant by structure.
+    A range above ``FACE_WIDTH_THRESHOLD`` certifies that the face holds more
+    than one point, that is, detected multiplicity.  A smaller range only means
+    that this functional is constant on the face and does NOT certify
+    uniqueness, which would require the range of every coordinate over the
+    face: on the segment {(t, 1 - t) : 0 <= t <= 1} the functional (1, 1) has
+    equal maximum and minimum, yet the set is not a point.  Callers therefore
+    read a small range as "multiplicity not detected" (Section 4.10 and
+    Table 8 of the article).
     """
     records = model.active_records
     physical_a, physical_b, _ = physical_matrices(model)
@@ -524,17 +631,20 @@ def check(model: Benchmark) -> dict[str, object]:
     sufficient, necessary, lp_others, lp_named = lp_bottleneck_test(
         model, closed, lp.lambda_star)
     face_width = stage2_face_width(model, lambda_star, stage2.ratios)
-    face_is_point = face_width <= FACE_WIDTH_THRESHOLD
+    multiplicity_not_detected = face_width <= FACE_WIDTH_THRESHOLD
 
     omega2 = stage2.temporal_variation
     omega3 = stage3.temporal_variation
     stage3_active = omega2 - omega3 > STAGE3_ACTIVITY_THRESHOLD
     if stage3_active:
         stage3_outcome = "active"
-    elif face_is_point:
-        stage3_outcome = "redundant: Stage-2 optimum unique"
+    elif multiplicity_not_detected:
+        stage3_outcome = "inactive: multiplicity not detected"
     else:
-        stage3_outcome = "inactive: Stage-2 vertex already smoothest"
+        stage3_outcome = (
+            "inactive: multiplicity detected; "
+            "no reduction above the activity threshold"
+        )
     moved = sum(
         1 for rec in model.active_records
         if abs(stage3.ratios[rec] - stage2.ratios[rec]) > RATIO_MOVE_THRESHOLD
@@ -569,7 +679,7 @@ def check(model: Benchmark) -> dict[str, object]:
         "omega_stage2": omega2,
         "omega_stage3": omega3,
         "stage2_face_width": face_width,
-        "stage2_optimum_unique": bool(face_is_point),
+        "stage2_multiplicity_not_detected": bool(multiplicity_not_detected),
         "stage3_active": bool(stage3_active),
         "stage3_outcome": stage3_outcome,
         "stage3_relative_reduction": (omega2 - omega3) / omega2 if omega2 > 0 else 0.0,
@@ -651,11 +761,13 @@ def summarize(rows: list[dict[str, object]]) -> list[dict[str, object]]:
             "bottleneck_identified": sum(
                 1 for r in with_bottleneck if r["bottleneck_identified"]),
             "with_bottleneck": len(with_bottleneck),
-            "stage2_optimum_unique": sum(1 for r in grp if r["stage2_optimum_unique"]),
+            "stage2_multiplicity_not_detected": sum(
+                1 for r in grp if r["stage2_multiplicity_not_detected"]),
             "stage3_active": len(active),
-            "stage3_inactive_face_not_point": sum(
+            "stage3_inactive_multiplicity_detected": sum(
                 1 for r in grp
-                if not r["stage3_active"] and not r["stage2_optimum_unique"]),
+                if not r["stage3_active"]
+                and not r["stage2_multiplicity_not_detected"]),
             "stage3_active_share": len(active) / len(grp),
             "median_relative_reduction_when_active": (
                 statistics.median(float(r["stage3_relative_reduction"]) for r in active)

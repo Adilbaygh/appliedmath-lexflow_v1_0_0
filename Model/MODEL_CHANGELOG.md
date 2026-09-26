@@ -1,5 +1,24 @@
 # Model development log
 
+## v0.5.7
+
+- Stage-2 diagnostics renamed to what the one-sided face probe
+  establishes: `stage2_multiplicity_not_detected` and
+  `stage3_inactive_multiplicity_detected`; the `stage3_outcome` strings
+  no longer contain "unique". The docstring of `stage2_face_width` no
+  longer states that a zero range means the optimal face is a point.
+- `_median` documented as the lower median of the positive values of
+  the resource class, matching `statistics.median_low`.
+- New family `load_independent` (60 instances, seed 20260926): the
+  source and reach volume scales are fixed before any draw from the
+  declared family parameters alone, so no capacity is a function of a
+  realized load. Generated on its own seed and reported in
+  `table_A8_load_independent_suite` and
+  `table_A8_load_independent_instances`.
+- The 400 instances of the existing suite are bit-for-bit unchanged;
+  no previously reported value changes. Two column names and two
+  `stage3_outcome` strings change in the two Table A3 files.
+
 ## v0.5.6
 
 Reported metrics are renamed to what the code actually measures, and the
