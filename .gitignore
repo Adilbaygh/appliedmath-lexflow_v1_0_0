@@ -37,3 +37,6 @@ LEXIMIN_loyiha_konteksti.md
 # Copyrighted reference PDFs kept locally for the review rounds. They are
 # third-party publisher material and must not be redistributed here.
 References/
+
+# Per-fix backups written by the work\<fix>\replace_*.ps1 scripts.
+*.bak_*
